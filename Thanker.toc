@@ -1,0 +1,7 @@
+## Interface: 100100
+## Title: Thanker
+## Notes: Automatically thanks for a buff
+## Author: tf4482
+## SavedVariables: DB_Thanker
+
+Core.lua
