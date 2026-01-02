@@ -14,7 +14,6 @@ local function ShowHelp()
     print("  /thanker excludeguild on/off - Exclude guild members from whispers")
     print("  /thanker debug on - Enable debug mode (allows self-buff testing)")
     print("  /thanker debug off - Disable debug mode")
-    print("  /thanker test - Test the whisper (in debug mode only)")
 end
 
 function Addon.View.ShowStatus()
@@ -76,8 +75,6 @@ local function SlashCommandHandler(msg)
         else
             print("|cFFFF0000Thanker:|r Usage: /thanker debug on|off")
         end
-    elseif command == "test" then
-        Addon.Control.TestWhisper()
     else
         print("|cFFFF0000Thanker:|r Unknown command. Type /thanker for help.")
     end

@@ -151,12 +151,3 @@ function Addon.Control.Initialize(pName, pFullName)
     playerName = pName
     playerFullName = pFullName
 end
-
-function Addon.Control.TestWhisper()
-    if DB_Thanker.debugMode then
-        print("|cFF00FF00Thanker:|r Test mode: Buff yourself to trigger a whisper.")
-        print("|cFF00FF00Thanker:|r The whisper will be sent to yourself after " .. DB_Thanker.replyDelay .. " seconds.")
-    else
-        print("|cFFFF0000Thanker:|r Debug mode must be enabled to test. Use /thanker debug on")
-    end
-end
