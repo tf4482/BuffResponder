@@ -79,7 +79,8 @@ local function ScheduleWhisper(targetName, delay)
     C_Timer.After(delay, function()
         SendChatMessage(DB_Thanker.message, "WHISPER", nil, targetName)
 
-        playerCooldowns[targetName] = currentTime + DB_Thanker.cooldownDelay
+        local whisperTime = GetTime()
+        playerCooldowns[targetName] = whisperTime + DB_Thanker.cooldownDelay
 
         scheduledWhispers[targetName] = nil
 
