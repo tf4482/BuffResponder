@@ -5,3 +5,6 @@
 ## SavedVariables: DB_Thanker
 
 Core.lua
+Static.lua
+Control.lua
+View.lua
