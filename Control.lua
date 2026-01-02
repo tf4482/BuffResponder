@@ -113,10 +113,10 @@ function Addon.Control.HandleCombatLog(timestamp, subevent, _, sourceGUID, sourc
     end
 
     if not BuffList[spellName] then
-        if DB_Thanker.debugMode then
-            print("|cFF00FF00Thanker:|r Buff '" .. (spellName or "unknown") .. "' is not in the whitelist. Ignoring.")
+        if not DB_Thanker.debugMode then
+            return
         end
-        return
+        print("|cFF00FF00Thanker:|r Debug mode: Buff '" .. (spellName or "unknown") .. "' is not in the whitelist but processing anyway.")
     end
 
     local sourceIsPlayer = (sourceGUID == playerGUID)
