@@ -1,6 +1,26 @@
 local addonName, Addon = ...
 Addon.Control = Addon.Control or {}
 
+local function Set(list)
+    local set = {}
+    for _, value in ipairs(list) do
+        set[value] = true
+    end
+    return set
+end
+
+local BuffList = Set({
+    (GetSpellInfo(Addon.Static.BuffSpells.MARK)),
+    (GetSpellInfo(Addon.Static.BuffSpells.THORNS)),
+    (GetSpellInfo(Addon.Static.BuffSpells.AI)),
+    (GetSpellInfo(Addon.Static.BuffSpells.MIGHT)),
+    (GetSpellInfo(Addon.Static.BuffSpells.KINGS)),
+    (GetSpellInfo(Addon.Static.BuffSpells.WIS)),
+    (GetSpellInfo(Addon.Static.BuffSpells.FORT)),
+    (GetSpellInfo(Addon.Static.BuffSpells.BREATH)),
+    (GetSpellInfo(Addon.Static.BuffSpells.WW)),
+})
+
 local playerCooldowns = {}
 local scheduledWhispers = {}
 
@@ -41,7 +61,7 @@ local function ScheduleWhisper(targetName, delay)
     end
 end
 
-function Addon.Control.HandleCombatLog(timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName)
+function Addon.Control.HandleCombatLog(timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName)
     if not DB_Thanker.enabled then
         return
     end
@@ -59,6 +79,13 @@ function Addon.Control.HandleCombatLog(timestamp, subevent, _, sourceGUID, sourc
         return
     end
 
+    if not BuffList[spellName] then
+        if DB_Thanker.debugMode then
+            print("|cFF00FF00Thanker:|r Buff '" .. (spellName or "unknown") .. "' is not in the whitelist. Ignoring.")
+        end
+        return
+    end
+
     local sourceIsPlayer = (sourceGUID == playerGUID)
 
     if sourceIsPlayer and not DB_Thanker.debugMode then
@@ -72,6 +99,10 @@ function Addon.Control.HandleCombatLog(timestamp, subevent, _, sourceGUID, sourc
     end
 
     local cleanName = sourceName:match("([^-]+)") or sourceName
+
+    if DB_Thanker.debugMode then
+        print("|cFF00FF00Thanker:|r Received whitelisted buff '" .. spellName .. "' from " .. cleanName)
+    end
 
     if sourceIsPlayer and DB_Thanker.debugMode then
         if DB_Thanker.debugMode then
