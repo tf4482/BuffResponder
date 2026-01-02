@@ -31,6 +31,8 @@ local playerName = UnitName("player")
 local playerRealm = GetRealmName()
 local playerFullName = playerName .. "-" .. playerRealm
 
+local isInGracePeriod = true
+
 local function OnEvent(self, event, ...)
     if event == "ADDON_LOADED" then
         local addonName = ...
@@ -43,12 +45,28 @@ local function OnEvent(self, event, ...)
             print("|cFF00FF00Thanker|r loaded. Type /thanker for options.")
             frame:UnregisterEvent("ADDON_LOADED")
         end
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        isInGracePeriod = true
+
+        if DB_Thanker.debugMode then
+            print("|cFF00FF00Thanker:|r Entered world, starting grace period.")
+        end
+
+        C_Timer.After(10, function()
+            isInGracePeriod = false
+            if DB_Thanker.debugMode then
+                print("|cFF00FF00Thanker:|r Grace period ended, now tracking buffs.")
+            end
+        end)
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
-        Addon.Control.HandleCombatLog(CombatLogGetCurrentEventInfo())
+        if not isInGracePeriod then
+            Addon.Control.HandleCombatLog(CombatLogGetCurrentEventInfo())
+        end
     end
 end
 
 frame:RegisterEvent("ADDON_LOADED")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 frame:SetScript("OnEvent", OnEvent)
 
