@@ -26,6 +26,38 @@ local scheduledWhispers = {}
 
 local playerName, playerFullName
 
+local function IsPlayerInGroup(name)
+    if not IsInGroup() then
+        return false
+    end
+
+    local numGroupMembers = GetNumGroupMembers()
+    for i = 1, numGroupMembers do
+        local unit = (IsInRaid() and "raid" or "party") .. i
+        if UnitName(unit) == name then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function IsPlayerInGuild(name)
+    if not IsInGuild() then
+        return false
+    end
+
+    local numGuildMembers = GetNumGuildMembers()
+    for i = 1, numGuildMembers do
+        local guildMemberName = GetGuildRosterInfo(i)
+        if guildMemberName and guildMemberName:match("([^-]+)") == name then
+            return true
+        end
+    end
+
+    return false
+end
+
 local function ScheduleWhisper(targetName, delay)
     local currentTime = GetTime()
     if playerCooldowns[targetName] and currentTime < playerCooldowns[targetName] then

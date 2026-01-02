@@ -7,6 +7,8 @@ local DEFAULTS = {
     replyDelay = 4,
     cooldownDelay = 60,
     debugMode = false,
+    excludeGroup = false,
+    excludeGuild = false,
 }
 
 DB_Thanker = DB_Thanker or {}
