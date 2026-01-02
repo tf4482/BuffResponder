@@ -3,12 +3,12 @@ Addon.Core = Addon.Core or {}
 
 local DEFAULTS = {
     enabled = true,
-    message = "Thank you!",
+    message = "Ty <3",
     replyDelay = 4,
     cooldownDelay = 60,
     debugMode = false,
-    excludeGroup = false,
-    excludeGuild = false,
+    excludeGroup = true,
+    excludeGuild = true,
 }
 
 DB_Thanker = DB_Thanker or {}
