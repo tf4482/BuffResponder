@@ -1,17 +1,21 @@
-# World of Warcraft Classic Addon "Thanker" 🛠️
+# Thanker 🙏
 
-## About The Project 📚
+WoW Classic addon that automatically thanks players for buffs ✨
 
-## Planned Features 🚀
+## Features 🎯
+- Auto-thank players who buff you
+- Customizable settings
 
-## Contributing 🤝
+## Installation 📦
+1. Download and extract to `World of Warcraft/_classic_/Interface/AddOns/`
+2. Restart WoW or log character out
+3. Enable in AddOns menu
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+## Tech Stack 🛠️
+Lua + Blizzard Addon API
 
-## Technology Stack 🖥️
+## Use 🚀
+1. Type /thanker help for command list
 
-This project is planned to be realized using Blizzards Addon API.
-
-# License 📜
-
-Distributed under the MIT License. See LICENSE for more information.
+## License 📜
+MIT License - see [`LICENSE`](LICENSE)
