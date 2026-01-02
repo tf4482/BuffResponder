@@ -142,9 +142,24 @@ function Addon.Control.HandleCombatLog(timestamp, subevent, _, sourceGUID, sourc
             print("|cFF00FF00Thanker:|r Debug mode: You buffed yourself. Scheduling test whisper.")
         end
         ScheduleWhisper(playerName, DB_Thanker.replyDelay)
-    else
-        ScheduleWhisper(cleanName, DB_Thanker.replyDelay)
+        return
     end
+
+    if DB_Thanker.excludeGroup and IsPlayerInGroup(cleanName) then
+        if DB_Thanker.debugMode then
+            print("|cFF00FF00Thanker:|r " .. cleanName .. " is in your group. Whisper skipped.")
+        end
+        return
+    end
+
+    if DB_Thanker.excludeGuild and IsPlayerInGuild(cleanName) then
+        if DB_Thanker.debugMode then
+            print("|cFF00FF00Thanker:|r " .. cleanName .. " is in your guild. Whisper skipped.")
+        end
+        return
+    end
+
+    ScheduleWhisper(cleanName, DB_Thanker.replyDelay)
 end
 
 function Addon.Control.Initialize(pName, pFullName)
