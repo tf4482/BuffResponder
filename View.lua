@@ -66,6 +66,28 @@ local function SlashCommandHandler(msg)
         else
             print("|cFFFF0000Thanker:|r Please provide a valid number (>= 0)")
         end
+    elseif command == "excludegroup" then
+        local toggleCmd = args:lower():trim()
+        if toggleCmd == "on" then
+            DB_Thanker.excludeGroup = true
+            print("|cFF00FF00Thanker:|r Group members will be excluded from whispers.")
+        elseif toggleCmd == "off" then
+            DB_Thanker.excludeGroup = false
+            print("|cFF00FF00Thanker:|r Group members will receive whispers.")
+        else
+            print("|cFFFF0000Thanker:|r Usage: /thanker excludegroup on|off")
+        end
+    elseif command == "excludeguild" then
+        local toggleCmd = args:lower():trim()
+        if toggleCmd == "on" then
+            DB_Thanker.excludeGuild = true
+            print("|cFF00FF00Thanker:|r Guild members will be excluded from whispers.")
+        elseif toggleCmd == "off" then
+            DB_Thanker.excludeGuild = false
+            print("|cFF00FF00Thanker:|r Guild members will receive whispers.")
+        else
+            print("|cFFFF0000Thanker:|r Usage: /thanker excludeguild on|off")
+        end
     elseif command == "debug" then
         local debugCmd = args:lower():trim()
         if debugCmd == "on" then

@@ -16,6 +16,7 @@ Lua + Blizzard Addon API
 
 ## Use 🚀
 1. Type /thanker help for command list
+2. Type /thanker status for current status
 
 ## License 📜
 MIT License - see [`LICENSE`](LICENSE)
