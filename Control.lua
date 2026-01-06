@@ -61,15 +61,15 @@ end
 local function ScheduleWhisper(targetName, delay)
     local currentTime = GetTime()
     if playerCooldowns[targetName] and currentTime < playerCooldowns[targetName] then
-        if DB_Thanker.debugMode then
-            print("|cFF00FF00Thanker:|r " .. targetName .. " is on cooldown. Whisper skipped.")
+        if DB_BuffResponder.debugMode then
+            print("|cFF00FF00BuffResponder:|r " .. targetName .. " is on cooldown. Whisper skipped.")
         end
         return
     end
 
     if scheduledWhispers[targetName] then
-        if DB_Thanker.debugMode then
-            print("|cFF00FF00Thanker:|r Whisper to " .. targetName .. " already scheduled.")
+        if DB_BuffResponder.debugMode then
+            print("|cFF00FF00BuffResponder:|r Whisper to " .. targetName .. " already scheduled.")
         end
         return
     end
@@ -77,25 +77,25 @@ local function ScheduleWhisper(targetName, delay)
     scheduledWhispers[targetName] = true
 
     C_Timer.After(delay, function()
-        SendChatMessage(DB_Thanker.message, "WHISPER", nil, targetName)
+        SendChatMessage(DB_BuffResponder.message, "WHISPER", nil, targetName)
 
         local whisperTime = GetTime()
-        playerCooldowns[targetName] = whisperTime + DB_Thanker.cooldownDelay
+        playerCooldowns[targetName] = whisperTime + DB_BuffResponder.cooldownDelay
 
         scheduledWhispers[targetName] = nil
 
-        if DB_Thanker.debugMode then
-            print("|cFF00FF00Thanker:|r Whispered " .. targetName .. ": " .. DB_Thanker.message)
+        if DB_BuffResponder.debugMode then
+            print("|cFF00FF00BuffResponder:|r Whispered " .. targetName .. ": " .. DB_BuffResponder.message)
         end
     end)
 
-    if DB_Thanker.debugMode then
-        print("|cFF00FF00Thanker:|r Scheduled whisper to " .. targetName .. " in " .. delay .. " seconds.")
+    if DB_BuffResponder.debugMode then
+        print("|cFF00FF00BuffResponder:|r Scheduled whisper to " .. targetName .. " in " .. delay .. " seconds.")
     end
 end
 
 function Addon.Control.HandleCombatLog(timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName)
-    if not DB_Thanker.enabled then
+    if not DB_BuffResponder.enabled then
         return
     end
 
@@ -113,53 +113,53 @@ function Addon.Control.HandleCombatLog(timestamp, subevent, _, sourceGUID, sourc
     end
 
     if not BuffList[spellName] then
-        if not DB_Thanker.debugMode then
+        if not DB_BuffResponder.debugMode then
             return
         end
-        print("|cFF00FF00Thanker:|r Debug mode: Buff '" .. (spellName or "unknown") .. "' is not in the whitelist but processing anyway.")
+        print("|cFF00FF00BuffResponder:|r Debug mode: Buff '" .. (spellName or "unknown") .. "' is not in the whitelist but processing anyway.")
     end
 
     local sourceIsPlayer = (sourceGUID == playerGUID)
 
-    if sourceIsPlayer and not DB_Thanker.debugMode then
+    if sourceIsPlayer and not DB_BuffResponder.debugMode then
         return
     end
 
     local isPlayer = bit.band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
 
-    if not isPlayer and not DB_Thanker.debugMode then
+    if not isPlayer and not DB_BuffResponder.debugMode then
         return
     end
 
     local cleanName = sourceName:match("([^-]+)") or sourceName
 
-    if DB_Thanker.debugMode then
-        print("|cFF00FF00Thanker:|r Received whitelisted buff '" .. spellName .. "' from " .. cleanName)
+    if DB_BuffResponder.debugMode then
+        print("|cFF00FF00BuffResponder:|r Received whitelisted buff '" .. spellName .. "' from " .. cleanName)
     end
 
-    if sourceIsPlayer and DB_Thanker.debugMode then
-        if DB_Thanker.debugMode then
-            print("|cFF00FF00Thanker:|r Debug mode: You buffed yourself. Scheduling test whisper.")
+    if sourceIsPlayer and DB_BuffResponder.debugMode then
+        if DB_BuffResponder.debugMode then
+            print("|cFF00FF00BuffResponder:|r Debug mode: You buffed yourself. Scheduling test whisper.")
         end
-        ScheduleWhisper(playerName, DB_Thanker.replyDelay)
+        ScheduleWhisper(playerName, DB_BuffResponder.replyDelay)
         return
     end
 
-    if DB_Thanker.excludeGroup and IsPlayerInGroup(cleanName) then
-        if DB_Thanker.debugMode then
-            print("|cFF00FF00Thanker:|r " .. cleanName .. " is in your group. Whisper skipped.")
-        end
-        return
-    end
-
-    if DB_Thanker.excludeGuild and IsPlayerInGuild(cleanName) then
-        if DB_Thanker.debugMode then
-            print("|cFF00FF00Thanker:|r " .. cleanName .. " is in your guild. Whisper skipped.")
+    if DB_BuffResponder.excludeGroup and IsPlayerInGroup(cleanName) then
+        if DB_BuffResponder.debugMode then
+            print("|cFF00FF00BuffResponder:|r " .. cleanName .. " is in your group. Whisper skipped.")
         end
         return
     end
 
-    ScheduleWhisper(cleanName, DB_Thanker.replyDelay)
+    if DB_BuffResponder.excludeGuild and IsPlayerInGuild(cleanName) then
+        if DB_BuffResponder.debugMode then
+            print("|cFF00FF00BuffResponder:|r " .. cleanName .. " is in your guild. Whisper skipped.")
+        end
+        return
+    end
+
+    ScheduleWhisper(cleanName, DB_BuffResponder.replyDelay)
 end
 
 function Addon.Control.Initialize(pName, pFullName)

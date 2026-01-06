@@ -11,12 +11,12 @@ local DEFAULTS = {
     excludeGuild = true,
 }
 
-DB_Thanker = DB_Thanker or {}
+DB_BuffResponder = DB_BuffResponder or {}
 
 local function InitializeSettings()
     for key, value in pairs(DEFAULTS) do
-        if DB_Thanker[key] == nil then
-            DB_Thanker[key] = value
+        if DB_BuffResponder[key] == nil then
+            DB_BuffResponder[key] = value
         end
     end
 end
@@ -36,26 +36,26 @@ local isInGracePeriod = true
 local function OnEvent(self, event, ...)
     if event == "ADDON_LOADED" then
         local addonName = ...
-        if addonName == "Thanker" then
+        if addonName == "BuffResponder" then
             InitializeSettings()
 
             Addon.Control.Initialize(playerName, playerFullName)
             Addon.View.Initialize()
 
-            print("|cFF00FF00Thanker|r loaded. Type /thanker for options.")
+            print("|cFF00FF00BuffResponder|r loaded. Type /buffr for options.")
             frame:UnregisterEvent("ADDON_LOADED")
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         isInGracePeriod = true
 
-        if DB_Thanker.debugMode then
-            print("|cFF00FF00Thanker:|r Entered world, starting grace period.")
+        if DB_BuffResponder.debugMode then
+            print("|cFF00FF00BuffResponder:|r Entered world, starting grace period.")
         end
 
         C_Timer.After(10, function()
             isInGracePeriod = false
-            if DB_Thanker.debugMode then
-                print("|cFF00FF00Thanker:|r Grace period ended, now tracking buffs.")
+            if DB_BuffResponder.debugMode then
+                print("|cFF00FF00BuffResponder:|r Grace period ended, now tracking buffs.")
             end
         end)
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
@@ -71,7 +71,7 @@ frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 frame:SetScript("OnEvent", OnEvent)
 
 function Addon.Core.GetSettings()
-    return DB_Thanker
+    return DB_BuffResponder
 end
 
 function Addon.Core.GetPlayerInfo()
