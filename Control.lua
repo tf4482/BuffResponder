@@ -58,12 +58,39 @@ local function IsPlayerInGuild(name)
     return false
 end
 
+local function GetResponseMessage()
+
+    local messages = {}
+    for i = 1, 5 do
+        local msg = DB_BuffResponder["message" .. i]
+        if msg and msg:trim() ~= "" then
+            table.insert(messages, msg)
+        end
+    end
+
+    if #messages == 0 then
+        return "Ty <3"
+    end
+
+    local mode = DB_BuffResponder.responseMode
+    if mode == "1" or mode == "2" or mode == "3" or mode == "4" or mode == "5" then
+        local msgIndex = tonumber(mode)
+        local msg = DB_BuffResponder["message" .. msgIndex]
+        if msg and msg:trim() ~= "" then
+            return msg
+        else
+            return messages[1]
+        end
+    end
+
+    local randomIndex = math.random(1, #messages)
+    return messages[randomIndex]
+end
+
 local function ScheduleWhisper(targetName, delay)
     local currentTime = GetTime()
-    if playerCooldowns[targetName] and currentTime < playerCooldowns[targetName] then
-        if DB_BuffResponder.debugMode then
-            print("|cFF00FF00BuffResponder:|r " .. targetName .. " is on cooldown. Whisper skipped.")
-        end
+    if not DB_BuffResponder.debugMode and playerCooldowns[targetName] and currentTime < playerCooldowns[targetName] then
+        print("|cFF00FF00BuffResponder:|r " .. targetName .. " is on cooldown. Whisper skipped.")
         return
     end
 
@@ -77,7 +104,8 @@ local function ScheduleWhisper(targetName, delay)
     scheduledWhispers[targetName] = true
 
     C_Timer.After(delay, function()
-        SendChatMessage(DB_BuffResponder.message, "WHISPER", nil, targetName)
+        local message = GetResponseMessage()
+        SendChatMessage(message, "WHISPER", nil, targetName)
 
         local whisperTime = GetTime()
         playerCooldowns[targetName] = whisperTime + DB_BuffResponder.cooldownDelay
@@ -85,7 +113,7 @@ local function ScheduleWhisper(targetName, delay)
         scheduledWhispers[targetName] = nil
 
         if DB_BuffResponder.debugMode then
-            print("|cFF00FF00BuffResponder:|r Whispered " .. targetName .. ": " .. DB_BuffResponder.message)
+            print("|cFF00FF00BuffResponder:|r Whispered " .. targetName .. ": " .. message)
         end
     end)
 

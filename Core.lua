@@ -3,7 +3,13 @@ Addon.Core = Addon.Core or {}
 
 local DEFAULTS = {
     enabled = true,
-    message = "Ty <3",
+    message = "ty <3",
+    message1 = "ty <3",
+    message2 = "thx :)",
+    message3 = "tyvm <3",
+    message4 = "ty :)",
+    message5 = "thx :D",
+    responseMode = "random",
     replyDelay = 4,
     cooldownDelay = 60,
     debugMode = false,
@@ -52,7 +58,7 @@ local function OnEvent(self, event, ...)
             print("|cFF00FF00BuffResponder:|r Entered world, starting grace period.")
         end
 
-        C_Timer.After(10, function()
+        C_Timer.After(8, function()
             isInGracePeriod = false
             if DB_BuffResponder.debugMode then
                 print("|cFF00FF00BuffResponder:|r Grace period ended, now tracking buffs.")
@@ -76,4 +82,10 @@ end
 
 function Addon.Core.GetPlayerInfo()
     return playerName, playerRealm, playerFullName
+end
+
+function Addon.Core.ResetSettings()
+    for key, value in pairs(DEFAULTS) do
+        DB_BuffResponder[key] = value
+    end
 end
