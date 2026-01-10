@@ -17,8 +17,6 @@ local BuffList = Set({
     (GetSpellInfo(Addon.Static.BuffSpells.KINGS)),
     (GetSpellInfo(Addon.Static.BuffSpells.WIS)),
     (GetSpellInfo(Addon.Static.BuffSpells.FORT)),
-    (GetSpellInfo(Addon.Static.BuffSpells.BREATH)),
-    (GetSpellInfo(Addon.Static.BuffSpells.WW)),
 })
 
 local playerCooldowns = {}
