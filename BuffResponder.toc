@@ -1,0 +1,10 @@
+## Interface: 100100
+## Title: BuffResponder
+## Notes: Automatically responds when getting buffed
+## Author: tf4482
+## SavedVariables: DB_BuffResponder
+
+Core.lua
+Static.lua
+Control.lua
+View.lua

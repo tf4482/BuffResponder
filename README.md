@@ -1,9 +1,9 @@
-# Thanker 🙏
+# BuffResponder 🙏
 
-WoW Classic addon that automatically thanks players for buffs ✨
+WoW Classic addon that automatically repsonsed when getting buffed ✨
 
 ## Features 🎯
-- Auto-thank players who buff you
+- Auto-responds to player players who buff you
 - Customizable settings
 
 ## Installation 📦
@@ -15,7 +15,8 @@ WoW Classic addon that automatically thanks players for buffs ✨
 Lua + Blizzard Addon API
 
 ## Use 🚀
-1. Type /thanker help for command list
+1. Type /buffr help for command list
+2. Type /buffr status for current status
 
 ## License 📜
 MIT License - see [`LICENSE`](LICENSE)
