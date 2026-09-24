@@ -9,3 +9,5 @@ WoW Classic addon that automatically repsonsed when getting buffed ✨
 ## Use 🚀
 1. Type /buffr help for command list
 2. Type /buffr status for current status
+
+https://www.curseforge.com/wow/addons/buffresponder

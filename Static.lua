@@ -9,4 +9,5 @@ Addon.Static.BuffSpells = {
     KINGS = 20217,
     WIS = 19742,
     FORT = 1243,
+    BREATH = 5697,
 }
