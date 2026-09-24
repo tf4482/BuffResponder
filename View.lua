@@ -1,149 +1,179 @@
-local addonName, Addon = ...
+local _, Addon = ...
 Addon.View = Addon.View or {}
 
-local function ShowHelp()
-    print("|cFF00FF00BuffResponder Commands:|r")
-    print("----------------------------------------------------")
-    print("BuffResponder 1.2 - Automatically responds when getting buffed")
-    print("----------------------------------------------------")
-    print("  /buffr - Show this help")
-    print("  /buffr status - Show current configuration")
-    print("  /buffr on/off - Enable/Disable the addon")
-    print("  /buffr message [text] - Set message #1")
-    print("  /buffr message1-5 [text] - Set specific message")
-    print("  /buffr mode [mode] - Set response mode")
-    print("    random = pick randomly from non-empty messages")
-    print("    1, 2, 3, 4, or 5 = always use that message")
-    print("  /buffr delay [seconds] - Set reply delay (default: 4)")
-    print("  /buffr cooldown [seconds] - Per-player cooldown (default: 60)")
-    print("  /buffr excludegroup on/off - Exclude group members")
-    print("  /buffr excludeguild on/off - Exclude guild members")
-    print("  /buffr debug on/off - Enable/Disable debug mode")
-    print("  /buffr reset - Reset all settings to default values")
-    print("----------------------------------------------------")
+local View = Addon.View
+local Core = Addon.Core
+local Static = Addon.Static
+
+local function State(value)
+    return value and "|cFF80FF80On|r" or "|cFFFF8080Off|r"
 end
 
-function Addon.View.ShowStatus()
-    print("|cFF00FF00BuffResponder Status:|r")
-    print("  Enabled: " .. (DB_BuffResponder.enabled and "|cFF00FF00Yes|r" or "|cFFFF0000No|r"))
-    print("  |cFFFFFF00Messages:|r")
-    for i = 1, 5 do
-        local msg = DB_BuffResponder["message" .. i]
-        if msg and msg:trim() ~= "" then
-            print("    Message " .. i .. ": " .. msg)
-        else
-            print("    Message " .. i .. ": |cFF808080(not set)|r")
-        end
+local function SetSetting(key, value, label)
+    local ok, result = Core.SetSetting(key, value)
+    if not ok then
+        Core.Print(label .. " " .. result .. ".", "FFFF8080")
+        return false
     end
-    print("  Response Mode: |cFFFFFF00" .. DB_BuffResponder.responseMode .. "|r")
-    print("  Reply Delay: " .. DB_BuffResponder.replyDelay .. " seconds")
-    print("  Cooldown: " .. DB_BuffResponder.cooldownDelay .. " seconds")
-    print("  Exclude Group: " .. (DB_BuffResponder.excludeGroup and "|cFF00FF00Yes|r" or "|cFFFF0000No|r"))
-    print("  Exclude Guild: " .. (DB_BuffResponder.excludeGuild and "|cFF00FF00Yes|r" or "|cFFFF0000No|r"))
-    print("  Debug Mode: " .. (DB_BuffResponder.debugMode and "|cFF00FF00On|r" or "|cFFFF0000Off|r"))
+    return true, result
 end
 
-local function SlashCommandHandler(msg)
-    local command, args = msg:match("^(%S*)%s*(.-)$")
+local function ShowHelp()
+    print("|cFF00FF00BuffResponder v" .. Core.GetVersion() .. "|r |cFFFFFFFF— commands|r")
+    print("|cFF80D8FF/buffr status|r — show the current configuration")
+    print("|cFF80D8FF/buffr on|off|r — enable or disable automatic replies")
+    print("|cFF80D8FF/buffr message [text]|r — set message 1")
+    print("|cFF80D8FF/buffr message1-5 [text]|r — set or clear a message")
+    print("|cFF80D8FF/buffr mode random|1|2|3|4|5|r — choose message selection")
+    print("|cFF80D8FF/buffr delay [0-" .. Static.Limits.replyDelayMax .. "]|r — set reply delay")
+    print("|cFF80D8FF/buffr cooldown [0-" .. Static.Limits.cooldownDelayMax .. "]|r — set per-player cooldown")
+    print("|cFF80D8FF/buffr excludegroup on|off|r — ignore group members")
+    print("|cFF80D8FF/buffr excludeguild on|off|r — ignore guild members")
+    print("|cFF80D8FF/buffr debug on|off|r — toggle diagnostic output")
+    print("|cFF80D8FF/buffr test|r — run local checks without whispering")
+    print("|cFF80D8FF/buffr reset|r — restore all defaults")
+end
+
+function View.ShowStatus()
+    local settings = Core.GetSettings()
+    print("|cFF00FF00BuffResponder v" .. Core.GetVersion() .. "|r |cFFFFFFFF— status|r")
+    print("  Enabled: " .. State(settings.enabled))
+    print("  |cFFFFFF80Messages|r")
+    for index = 1, 5 do
+        local message = settings["message" .. index]
+        print("    " .. index .. ": " .. (message ~= "" and message or "|cFF808080(not set)|r"))
+    end
+    print("  Mode: |cFFFFFF80" .. settings.responseMode .. "|r")
+    print("  Reply delay: |cFFFFFF80" .. settings.replyDelay .. " seconds|r")
+    print("  Cooldown: |cFFFFFF80" .. settings.cooldownDelay .. " seconds|r")
+    print("  Exclude group: " .. State(settings.excludeGroup))
+    print("  Exclude guild: " .. State(settings.excludeGuild))
+    print("  Debug: " .. State(settings.debugMode))
+end
+
+local function HandleEnabled(enabled)
+    SetSetting("enabled", enabled, "Enabled")
+    if not enabled then
+        Addon.Control.CancelAllScheduled("addon disabled")
+    end
+    Core.Print(enabled and "✅ Automatic replies enabled." or "⏸ Automatic replies disabled.")
+end
+
+local function HandleMessage(command, args)
+    local index = command == "message" and "1" or command:match("^message([1-5])$")
+    if not index then
+        return false
+    end
+
+    local message = Core.Trim(args)
+    if command == "message" and message == "" then
+        Core.Print("Provide message text.", "FFFF8080")
+        return true
+    end
+
+    local ok, result = SetSetting("message" .. index, message, "Message " .. index)
+    if ok then
+        Core.Print(result == "" and ("🧹 Message " .. index .. " cleared.") or ("💬 Message " .. index .. " set to: " .. result))
+    end
+    return true
+end
+
+local function HandleMode(args)
+    local ok, mode = SetSetting("responseMode", args, "Response mode")
+    if ok then
+        Core.Print(mode == "random" and "🎲 Response mode set to random." or ("📌 Always using message " .. mode .. "."))
+    end
+end
+
+local function HandleNumber(key, label, args)
+    local ok, value = SetSetting(key, args, label)
+    if ok then
+        Core.Print("⏱ " .. label .. " set to " .. value .. " seconds.")
+    end
+end
+
+local function HandleToggle(key, command, label, args)
+    local value = Core.Trim(args):lower()
+    if value ~= "on" and value ~= "off" then
+        Core.Print("Usage: /buffr " .. command .. " on|off", "FFFF8080")
+        return
+    end
+
+    local enabled = value == "on"
+    if SetSetting(key, enabled, label) then
+        Core.Print((enabled and "✅ " or "⛔ ") .. label .. ": " .. (enabled and "on" or "off") .. ".")
+    end
+end
+
+local commands = {
+    help = function()
+        ShowHelp()
+    end,
+    status = function()
+        View.ShowStatus()
+    end,
+    on = function()
+        HandleEnabled(true)
+    end,
+    off = function()
+        HandleEnabled(false)
+    end,
+    mode = function(args)
+        HandleMode(args)
+    end,
+    delay = function(args)
+        HandleNumber("replyDelay", "Reply delay", args)
+    end,
+    cooldown = function(args)
+        HandleNumber("cooldownDelay", "Cooldown", args)
+    end,
+    excludegroup = function(args)
+        HandleToggle("excludeGroup", "excludegroup", "Exclude group", args)
+    end,
+    excludeguild = function(args)
+        HandleToggle("excludeGuild", "excludeguild", "Exclude guild", args)
+    end,
+    debug = function(args)
+        HandleToggle("debugMode", "debug", "Debug", args)
+    end,
+    test = function()
+        Core.Print("🧪 Running local checks; no whisper will be sent.")
+        local passed, total = Addon.Control.RunSelfTest()
+        Core.Print((passed == total and "✅ " or "⚠️ ") .. passed .. "/" .. total .. " checks passed.")
+    end,
+    reset = function()
+        Addon.Control.CancelAllScheduled("settings reset")
+        Core.ResetSettings()
+        Core.Print("♻️ Settings restored to defaults.")
+        View.ShowStatus()
+    end,
+}
+
+local function SlashCommandHandler(input)
+    local command, args = Core.Trim(input):match("^(%S*)%s*(.-)$")
     command = command:lower()
 
-    if command == "" or command == "help" then
-        ShowHelp()
-    elseif command == "status" then
-        Addon.View.ShowStatus()
-    elseif command == "on" then
-        DB_BuffResponder.enabled = true
-        print("|cFF00FF00BuffResponder:|r Enabled")
-    elseif command == "off" then
-        DB_BuffResponder.enabled = false
-        print("|cFF00FF00BuffResponder:|r Disabled")
-    elseif command == "message" then
-        if args and args:trim() ~= "" then
-            DB_BuffResponder.message1 = args:trim()
-            print("|cFF00FF00BuffResponder:|r Message 1 set to: " .. DB_BuffResponder.message1)
-        else
-            print("|cFFFF0000BuffResponder:|r Please provide a message.")
-        end
-    elseif command == "message1" or command == "message2" or command == "message3" or command == "message4" or command == "message5" then
-        local msgNum = command:sub(-1)
-        if args and args:trim() ~= "" then
-            DB_BuffResponder["message" .. msgNum] = args:trim()
-            print("|cFF00FF00BuffResponder:|r Message " .. msgNum .. " set to: " .. DB_BuffResponder["message" .. msgNum])
-        else
-            DB_BuffResponder["message" .. msgNum] = ""
-            print("|cFF00FF00BuffResponder:|r Message " .. msgNum .. " cleared.")
-        end
-    elseif command == "mode" then
-        local mode = args:lower():trim()
-        if mode == "random" or mode == "1" or mode == "2" or mode == "3" or mode == "4" or mode == "5" then
-            DB_BuffResponder.responseMode = mode
-            if mode == "random" then
-                print("|cFF00FF00BuffResponder:|r Response mode set to: Random (picks from all non-empty messages)")
-            else
-                print("|cFF00FF00BuffResponder:|r Response mode set to: Always use Message " .. mode)
-            end
-        else
-            print("|cFFFF0000BuffResponder:|r Invalid mode. Use: random, 1, 2, 3, 4, or 5")
-        end
-    elseif command == "delay" then
-        local delay = tonumber(args)
-        if delay and delay >= 0 then
-            DB_BuffResponder.replyDelay = delay
-            print("|cFF00FF00BuffResponder:|r Reply delay set to " .. delay .. " seconds")
-        else
-            print("|cFFFF0000BuffResponder:|r Please provide a valid number (>= 0)")
-        end
-    elseif command == "cooldown" then
-        local cooldown = tonumber(args)
-        if cooldown and cooldown >= 0 then
-            DB_BuffResponder.cooldownDelay = cooldown
-            print("|cFF00FF00BuffResponder:|r Cooldown set to " .. cooldown .. " seconds")
-        else
-            print("|cFFFF0000BuffResponder:|r Please provide a valid number (>= 0)")
-        end
-    elseif command == "excludegroup" then
-        local toggleCmd = args:lower():trim()
-        if toggleCmd == "on" then
-            DB_BuffResponder.excludeGroup = true
-            print("|cFF00FF00BuffResponder:|r Group members will be excluded from whispers.")
-        elseif toggleCmd == "off" then
-            DB_BuffResponder.excludeGroup = false
-            print("|cFF00FF00BuffResponder:|r Group members will receive whispers.")
-        else
-            print("|cFFFF0000BuffResponder:|r Usage: /buffr excludegroup on|off")
-        end
-    elseif command == "excludeguild" then
-        local toggleCmd = args:lower():trim()
-        if toggleCmd == "on" then
-            DB_BuffResponder.excludeGuild = true
-            print("|cFF00FF00BuffResponder:|r Guild members will be excluded from whispers.")
-        elseif toggleCmd == "off" then
-            DB_BuffResponder.excludeGuild = false
-            print("|cFF00FF00BuffResponder:|r Guild members will receive whispers.")
-        else
-            print("|cFFFF0000BuffResponder:|r Usage: /buffr excludeguild on|off")
-        end
-    elseif command == "debug" then
-        local debugCmd = args:lower():trim()
-        if debugCmd == "on" then
-            DB_BuffResponder.debugMode = true
-            print("|cFF00FF00BuffResponder:|r Debug mode enabled. You can now buff yourself to test whispers.")
-        elseif debugCmd == "off" then
-            DB_BuffResponder.debugMode = false
-            print("|cFF00FF00BuffResponder:|r Debug mode disabled.")
-        else
-            print("|cFFFF0000BuffResponder:|r Usage: /buffr debug on|off")
-        end
-    elseif command == "reset" then
-        Addon.Core.ResetSettings()
-        print("|cFF00FF00BuffResponder:|r All settings have been reset to default values.")
-        Addon.View.ShowStatus()
-    else
-        print("|cFFFF0000BuffResponder:|r Unknown command. Type /buffr for help.")
+    if command == "" then
+        command = "help"
     end
+
+    if HandleMessage(command, args) then
+        return
+    end
+
+    local handler = commands[command]
+    if not handler then
+        Core.Print("Unknown command. Type /buffr for help.", "FFFF8080")
+        return
+    end
+    handler(args)
 end
 
-function Addon.View.Initialize()
+function View.Initialize()
     SLASH_BUFFR1 = "/buffr"
-    SlashCmdList["BUFFR"] = SlashCommandHandler
+    SlashCmdList.BUFFR = SlashCommandHandler
 end
+
+View._Test = {
+    SlashCommandHandler = SlashCommandHandler,
+}
