@@ -16,7 +16,7 @@ end
 -- Blizzard chat icons instead of emojis, which the game font cannot render
 Addon.Static.Icons = {
     ok = Icon("Interface\\RaidFrame\\ReadyCheck-Ready"),
-    fail = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_7"),
+    fail = Icon("Interface\\RaidFrame\\ReadyCheck-NotReady"),
     off = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_2"),
     info = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_6"),
     star = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_1"),
