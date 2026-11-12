@@ -24,6 +24,7 @@ local inGroup = false
 local guildRoster = {}
 local interfaceVersion = 11509
 local auraSecret = false
+local inInstance = false
 local openedChat
 local whisperTarget
 local linkCallback
@@ -31,6 +32,10 @@ local linkCallback
 -- WoW API mocks
 function GetBuildInfo()
     return "test", "0", "", interfaceVersion
+end
+
+function IsInInstance()
+    return inInstance
 end
 
 function UnitIsPlayer(unit)
@@ -336,13 +341,20 @@ auraSecret = false
 sentCount = #sentMessages
 FireAura(1243, "nameplate1")
 timers[#timers].callback()
-Check("forever never whispers automatically", #sentMessages == sentCount)
-Check("forever queues a thank-you", Addon.Control.GetPendingThankCount() == 1)
-Check("chat line carries a thank link", output[#output]:find("|Haddon:BuffResponder:thank:helper stormgaard|h", 1, true) ~= nil)
+Check("forever whispers automatically outside instances", #sentMessages == sentCount + 1)
+Check("whisper goes to first name and surname", sentMessages[#sentMessages].target == "Helper Stormgaard")
 
-linkCallback("addon:BuffResponder:thank:helper stormgaard")
-Check("thank link opens a prefilled whisper", openedChat == "cheers")
-Check("whisper goes to first name and surname", whisperTarget == "Helper Stormgaard")
+groupUnits.nameplate2 = { "Healer", "Brightwood" }
+inInstance = true
+sentCount = #sentMessages
+FireAura(1243, "nameplate2")
+timers[#timers].callback()
+Check("instance blocks the automatic whisper", #sentMessages == sentCount)
+Check("instance queues a thank-you instead", Addon.Control.GetPendingThankCount() == 1)
+Check("chat line carries a thank link", output[#output]:find("|Haddon:BuffResponder:thank:healer brightwood|h", 1, true) ~= nil)
+
+linkCallback("addon:BuffResponder:thank:healer brightwood")
+Check("thank link opens a prefilled whisper", openedChat == "cheers" and whisperTarget == "Healer Brightwood")
 Check("thanked player leaves the queue", Addon.Control.GetPendingThankCount() == 0)
 
 openedChat = nil

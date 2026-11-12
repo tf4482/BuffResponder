@@ -181,10 +181,22 @@ local function CanWhisper(targetKey)
     return true
 end
 
--- Classic Era: whisper directly; Forever: queue a prompt the player confirms
-local function Deliver(targetName, targetKey, displayName, message)
+-- WoW Forever blocks addon chat in instances; Classic Era always allows it
+local function CanAutoWhisper()
     if not Static.IsForever then
-        SendChatMessage(message, "WHISPER", nil, targetName)
+        return true
+    end
+    if C_ChatInfo and C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown() then
+        return false
+    end
+    return not IsInInstance()
+end
+
+-- Whisper directly when allowed; otherwise queue a prompt the player confirms
+local function Deliver(targetName, targetKey, displayName, message)
+    if CanAutoWhisper() then
+        local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+        send(message, "WHISPER", nil, targetName)
         Core.Debug("Whispered " .. targetName .. ": " .. message)
         return
     end
