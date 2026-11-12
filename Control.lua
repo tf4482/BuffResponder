@@ -286,8 +286,13 @@ function Control.HandleCombatLog(_, subevent, _, sourceGUID, sourceName, sourceF
 end
 
 -- WoW Forever: check one aura on the player for a tracked buff from another player
-local function HandleAura(aura)
+local function HandleAura(aura, isUpdate)
     if not aura or IsSecret(aura.spellId) or IsSecret(aura.sourceUnit) then
+        return
+    end
+
+    -- Updates of untracked auras (e.g. movement effects) fire constantly; skip them silently
+    if isUpdate and not Static.BuffSpellIds[aura.spellId] then
         return
     end
 
@@ -328,7 +333,7 @@ function Control.HandleAuraUpdate(updateInfo)
         HandleAura(aura)
     end
     for _, auraInstanceID in ipairs(updateInfo.updatedAuraInstanceIDs or {}) do
-        HandleAura(C_UnitAuras.GetAuraDataByAuraInstanceID("player", auraInstanceID))
+        HandleAura(C_UnitAuras.GetAuraDataByAuraInstanceID("player", auraInstanceID), true)
     end
 end
 
