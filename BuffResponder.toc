@@ -1,6 +1,6 @@
-## Interface: 11509
+## Interface: 11509, 16001
 ## Title: BuffResponder
-## Notes: Sends a configurable thank-you whisper when another player buffs you
+## Notes: Thanks players who buff you with a configurable whisper (automatic on Classic Era, one click on WoW Forever)
 ## Author: tf4482
 ## Version: 2.0.0
 ## IconTexture: Interface\Icons\Spell_Holy_WordFortitude
