@@ -15,7 +15,7 @@ end
 local function SetSetting(key, value, label)
     local ok, result = Core.SetSetting(key, value)
     if not ok then
-        Core.Print(label .. " " .. result .. ".", "FFFF8080")
+        Core.Print(Static.Icons.fail .. label .. " " .. result .. ".", "FFFF8080")
         return false
     end
     return true, result
@@ -69,7 +69,7 @@ local function HandleEnabled(enabled)
         Addon.Control.CancelAllScheduled("addon disabled")
         Addon.Control.ClearThanks()
     end
-    Core.Print(enabled and "Replies enabled." or "Replies disabled.", enabled and "FF80FF80" or "FFFFFF80")
+    Core.Print(enabled and (Static.Icons.ok .. "Replies enabled.") or (Static.Icons.off .. "Replies disabled."), enabled and "FF80FF80" or "FFFFFF80")
 end
 
 -- Set or clear message 1-5; false when the command is no message command
@@ -81,13 +81,13 @@ local function HandleMessage(command, args)
 
     local message = Core.Trim(args)
     if command == "message" and message == "" then
-        Core.Print("Provide message text.", "FFFF8080")
+        Core.Print(Static.Icons.fail .. "Provide message text.", "FFFF8080")
         return true
     end
 
     local ok, result = SetSetting("message" .. index, message, "Message " .. index)
     if ok then
-        Core.Print(result == "" and ("Message " .. index .. " cleared.") or ("Message " .. index .. " set to: " .. result), result == "" and "FFFFFF80" or "FF80FF80")
+        Core.Print(result == "" and (Static.Icons.off .. "Message " .. index .. " cleared.") or (Static.Icons.ok .. "Message " .. index .. " set to: " .. result), result == "" and "FFFFFF80" or "FF80FF80")
     end
     return true
 end
@@ -96,7 +96,7 @@ end
 local function HandleMode(args)
     local ok, mode = SetSetting("responseMode", args, "Response mode")
     if ok then
-        Core.Print(mode == "random" and "Response mode set to random." or ("Always using message " .. mode .. "."), "FF80FF80")
+        Core.Print(Static.Icons.ok .. (mode == "random" and "Response mode set to random." or ("Always using message " .. mode .. ".")), "FF80FF80")
     end
 end
 
@@ -104,7 +104,7 @@ end
 local function HandleNumber(key, label, args)
     local ok, value = SetSetting(key, args, label)
     if ok then
-        Core.Print(label .. " set to " .. value .. " seconds.", "FF80FF80")
+        Core.Print(Static.Icons.ok .. label .. " set to " .. value .. " seconds.", "FF80FF80")
     end
 end
 
@@ -112,13 +112,13 @@ end
 local function HandleToggle(key, command, label, args)
     local value = Core.Trim(args):lower()
     if value ~= "on" and value ~= "off" then
-        Core.Print("Usage: /buffr " .. command .. " on|off", "FFFF8080")
+        Core.Print(Static.Icons.fail .. "Usage: /buffr " .. command .. " on|off", "FFFF8080")
         return
     end
 
     local enabled = value == "on"
     if SetSetting(key, enabled, label) then
-        Core.Print(label .. ": " .. (enabled and "on" or "off") .. ".", enabled and "FF80FF80" or "FFFFFF80")
+        Core.Print((enabled and Static.Icons.ok or Static.Icons.off) .. label .. ": " .. (enabled and "on" or "off") .. ".", enabled and "FF80FF80" or "FFFFFF80")
     end
 end
 
@@ -156,21 +156,21 @@ local commands = {
     end,
     thank = function()
         if not Static.IsForever then
-            Core.Print("Replies are whispered automatically on this client.")
+            Core.Print(Static.Icons.info .. "Replies are whispered automatically on this client.")
             return
         end
         Addon.Control.Thank()
     end,
     test = function()
-        Core.Print("Running local checks; no whisper will be sent.", "FF80D8FF")
+        Core.Print(Static.Icons.info .. "Running local checks; no whisper will be sent.", "FF80D8FF")
         local passed, total = Addon.Control.RunSelfTest()
-        Core.Print(passed .. "/" .. total .. " checks passed.", passed == total and "FF80FF80" or "FFFF8080")
+        Core.Print((passed == total and Static.Icons.ok or Static.Icons.fail) .. passed .. "/" .. total .. " checks passed.", passed == total and "FF80FF80" or "FFFF8080")
     end,
     reset = function()
         Addon.Control.CancelAllScheduled("settings reset")
         Addon.Control.ClearThanks()
         Core.ResetSettings()
-        Core.Print("Settings restored to defaults.", "FF80FF80")
+        Core.Print(Static.Icons.ok .. "Settings restored to defaults.", "FF80FF80")
         View.ShowStatus()
     end,
 }
@@ -190,7 +190,7 @@ local function SlashCommandHandler(input)
 
     local handler = commands[command]
     if not handler then
-        Core.Print("Unknown command. Type /buffr for help.", "FFFF8080")
+        Core.Print(Static.Icons.fail .. "Unknown command. Type /buffr for help.", "FFFF8080")
         return
     end
     handler(args)

@@ -181,7 +181,7 @@ local function Deliver(targetName, targetKey, displayName, message)
 
     thankQueue[#thankQueue + 1] = { key = targetKey, name = targetName, message = message }
     local link = "|cFF80D8FF|H" .. THANK_LINK_PREFIX .. targetKey .. "|h[Thank]|h|r"
-    Core.Print(displayName .. " buffed you. " .. link .. " or |cFFFFFF00/buffr thank|r")
+    Core.Print(Static.Icons.star .. displayName .. " buffed you. " .. link .. " or |cFFFFFF00/buffr thank|r")
 end
 
 -- Delayed reply with revalidation right before delivery
@@ -336,7 +336,7 @@ end
 function Control.Thank(targetKey)
     local index = targetKey and FindThank(targetKey) or (thankQueue[1] and 1)
     if not index then
-        Core.Print("No pending thank-yous.", "FFFFFF80")
+        Core.Print(Static.Icons.off .. "No pending thank-yous.", "FFFFFF80")
         return false
     end
 
@@ -417,7 +417,7 @@ function Control.RunSelfTest()
     for _, check in ipairs(checks) do
         local ok = not not check[2]
         passed = passed + (ok and 1 or 0)
-        Core.Print((ok and "OK: " or "FAIL: ") .. check[1], ok and "FF80FF80" or "FFFF8080")
+        Core.Print((ok and Static.Icons.ok or Static.Icons.fail) .. check[1], ok and "FF80FF80" or "FFFF8080")
     end
     return passed, #checks
 end

@@ -8,6 +8,20 @@ Addon.Static.SchemaVersion = 2
 local interfaceVersion = select(4, GetBuildInfo()) or 0
 Addon.Static.IsForever = interfaceVersion >= 16000 and interfaceVersion < 17000
 
+-- Inline chat icon from a game texture
+local function Icon(path)
+    return "|T" .. path .. ":0|t "
+end
+
+-- Blizzard chat icons instead of emojis, which the game font cannot render
+Addon.Static.Icons = {
+    ok = Icon("Interface\\RaidFrame\\ReadyCheck-Ready"),
+    fail = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_7"),
+    off = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_2"),
+    info = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_6"),
+    star = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_1"),
+}
+
 -- Default settings for a fresh or reset profile
 Addon.Static.Defaults = {
     schemaVersion = Addon.Static.SchemaVersion,

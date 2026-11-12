@@ -216,7 +216,7 @@ local function OnEvent(_, event, ...)
         Addon.Control.Initialize(playerName, playerRealm, playerFullName)
         RequestGuildRoster()
         Addon.Control.RefreshGuildRoster()
-        Core.Print("Loaded v" .. Core.GetVersion() .. ". Type |cFFFFFF00/buffr|r for options.")
+        Core.Print(Static.Icons.star .. "Loaded v" .. Core.GetVersion() .. ". Type |cFFFFFF00/buffr|r for options.")
     elseif event == "PLAYER_ENTERING_WORLD" then
         RefreshPlayerInfo()
         Addon.Control.Initialize(playerName, playerRealm, playerFullName)
@@ -261,7 +261,7 @@ end
 -- Diagnostic line, only in debug mode
 function Core.Debug(message)
     if settings and settings.debugMode then
-        Core.Print("Debug: " .. tostring(message), "FF80D8FF")
+        Core.Print(Static.Icons.info .. tostring(message), "FF80D8FF")
     end
 end
 
