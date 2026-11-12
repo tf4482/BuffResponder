@@ -46,6 +46,16 @@ local function GetUnitIdentity(unit)
         return nil
     end
 
+    -- WoW Forever: UnitName returns first name and surname; whispers need "First Last"
+    if Static.IsForever then
+        local firstName, surname = UnitName(unit)
+        if not firstName then
+            return nil
+        end
+        local fullName = surname and surname ~= "" and (firstName .. " " .. surname) or firstName
+        return fullName, fullName:lower(), fullName
+    end
+
     local name, realm
     if UnitFullName then
         name, realm = UnitFullName(unit)
@@ -337,7 +347,21 @@ function Control.HandleAuraUpdate(updateInfo)
     end
 end
 
--- Open the chat box prefilled with the whisper; the player sends it with Enter
+-- Open the chat box as a whisper to the player with the message filled in
+local function OpenWhisper(name, message)
+    if not (ChatFrameUtil and ChatFrameUtil.ChooseBoxForSend) then
+        ChatFrame_OpenChat("/w " .. name .. " " .. message)
+        return
+    end
+    -- Set the target directly; "/w First Last" would split the surname from the name
+    local editBox = ChatFrameUtil.ChooseBoxForSend()
+    editBox:SetChatType("WHISPER")
+    editBox:SetTellTarget(name)
+    ChatFrameUtil.OpenChat(message)
+    editBox:UpdateHeader()
+end
+
+-- Prepare the next or a given thank-you; the player sends it with Enter
 function Control.Thank(targetKey)
     local index = targetKey and FindThank(targetKey) or (thankQueue[1] and 1)
     if not index then
@@ -346,10 +370,9 @@ function Control.Thank(targetKey)
     end
 
     local entry = table.remove(thankQueue, index)
-    local openChat = ChatFrameUtil and ChatFrameUtil.OpenChat or ChatFrame_OpenChat
     -- Next frame: after a slash command Blizzard clears and hides the chat box
     C_Timer.After(0, function()
-        openChat("/w " .. entry.name .. " " .. entry.message)
+        OpenWhisper(entry.name, entry.message)
     end)
     Core.Print(Static.Icons.star .. "Whisper to " .. entry.name .. " ready; press Enter to send.")
     return true
@@ -394,7 +417,13 @@ function Control.RefreshGuildRoster()
 
     for index = 1, GetNumGuildMembers() do
         local memberName = GetGuildRosterInfo(index)
-        local _, key = NormalizePlayerName(memberName, playerRealm)
+        local _, key
+        if Static.IsForever and type(memberName) == "string" then
+            -- WoW Forever: "First Last", without any realm suffix
+            key = (memberName:gsub("%-.*$", "")):lower()
+        else
+            _, key = NormalizePlayerName(memberName, playerRealm)
+        end
         if key then
             guildMembers[key] = true
         end

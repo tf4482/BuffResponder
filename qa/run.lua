@@ -25,6 +25,7 @@ local guildRoster = {}
 local interfaceVersion = 11509
 local auraSecret = false
 local openedChat
+local whisperTarget
 local linkCallback
 
 -- WoW API mocks
@@ -59,7 +60,19 @@ EventRegistry = {
     end,
 }
 
+-- Chat edit box that records the whisper target
+local editBox = {
+    SetChatType = function() end,
+    SetTellTarget = function(_, target)
+        whisperTarget = target
+    end,
+    UpdateHeader = function() end,
+}
+
 ChatFrameUtil = {
+    ChooseBoxForSend = function()
+        return editBox
+    end,
     OpenChat = function(text)
         openedChat = text
     end,
@@ -116,8 +129,7 @@ function UnitFullName(unit)
 end
 
 function UnitName(unit)
-    local name = UnitFullName(unit)
-    return name
+    return UnitFullName(unit)
 end
 
 function UnitExists(unit)
@@ -306,7 +318,7 @@ interfaceVersion = 16001
 Addon, eventFrame = LoadAddon()
 Check("forever client uses UNIT_AURA", eventFrame.events.UNIT_AURA and not eventFrame.events.COMBAT_LOG_EVENT_UNFILTERED)
 
-groupUnits.nameplate1 = { "Helper", "ClassicRealm" }
+groupUnits.nameplate1 = { "Helper", "Stormgaard" }
 -- Simulate a buff added to the player on WoW Forever
 local function FireAura(spellId, sourceUnit)
     Addon.Control.HandleAuraUpdate({ addedAuras = { { spellId = spellId, name = "Power Word: Fortitude", sourceUnit = sourceUnit } } })
@@ -326,10 +338,11 @@ FireAura(1243, "nameplate1")
 timers[#timers].callback()
 Check("forever never whispers automatically", #sentMessages == sentCount)
 Check("forever queues a thank-you", Addon.Control.GetPendingThankCount() == 1)
-Check("chat line carries a thank link", output[#output]:find("|Haddon:BuffResponder:thank:helper-classicrealm|h", 1, true) ~= nil)
+Check("chat line carries a thank link", output[#output]:find("|Haddon:BuffResponder:thank:helper stormgaard|h", 1, true) ~= nil)
 
-linkCallback("addon:BuffResponder:thank:helper-classicrealm")
-Check("thank link opens a prefilled whisper", openedChat == "/w Helper-ClassicRealm cheers")
+linkCallback("addon:BuffResponder:thank:helper stormgaard")
+Check("thank link opens a prefilled whisper", openedChat == "cheers")
+Check("whisper goes to first name and surname", whisperTarget == "Helper Stormgaard")
 Check("thanked player leaves the queue", Addon.Control.GetPendingThankCount() == 0)
 
 openedChat = nil

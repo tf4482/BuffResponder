@@ -67,7 +67,7 @@ WoW Forever does not let addons whisper on their own or read the combat log, so 
 
 1. It watches the auras on your character and recognizes a tracked buff from another player.
 2. After the reply delay it prints a chat line such as `Name buffed you. [Thank] or /buffr thank`.
-3. Click **[Thank]** or type `/buffr thank`: the chat box opens prefilled with `/w Name-Realm <message>`.
+3. Click **[Thank]** or type `/buffr thank`: the chat box opens as a whisper to the player (first name and surname) with your message filled in.
 4. Press **Enter** to send it, or **Esc** to skip.
 
 Tip: put `/buffr thank` into a macro on your action bar to thank the next player with one key press.
