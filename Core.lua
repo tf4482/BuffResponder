@@ -261,7 +261,7 @@ end
 -- Diagnostic line, only in debug mode
 function Core.Debug(message)
     if settings and settings.debugMode then
-        Core.Print("🔍 " .. tostring(message), "FF80D8FF")
+        Core.Print("Debug: " .. tostring(message), "FF80D8FF")
     end
 end
 

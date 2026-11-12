@@ -417,7 +417,7 @@ function Control.RunSelfTest()
     for _, check in ipairs(checks) do
         local ok = not not check[2]
         passed = passed + (ok and 1 or 0)
-        Core.Print((ok and "✅ " or "❌ ") .. check[1], ok and "FF80FF80" or "FFFF8080")
+        Core.Print((ok and "OK: " or "FAIL: ") .. check[1], ok and "FF80FF80" or "FFFF8080")
     end
     return passed, #checks
 end

@@ -69,7 +69,7 @@ local function HandleEnabled(enabled)
         Addon.Control.CancelAllScheduled("addon disabled")
         Addon.Control.ClearThanks()
     end
-    Core.Print(enabled and "✅ Automatic replies enabled." or "⏸ Automatic replies disabled.")
+    Core.Print(enabled and "Replies enabled." or "Replies disabled.", enabled and "FF80FF80" or "FFFFFF80")
 end
 
 -- Set or clear message 1-5; false when the command is no message command
@@ -87,7 +87,7 @@ local function HandleMessage(command, args)
 
     local ok, result = SetSetting("message" .. index, message, "Message " .. index)
     if ok then
-        Core.Print(result == "" and ("🧹 Message " .. index .. " cleared.") or ("💬 Message " .. index .. " set to: " .. result))
+        Core.Print(result == "" and ("Message " .. index .. " cleared.") or ("Message " .. index .. " set to: " .. result), result == "" and "FFFFFF80" or "FF80FF80")
     end
     return true
 end
@@ -96,7 +96,7 @@ end
 local function HandleMode(args)
     local ok, mode = SetSetting("responseMode", args, "Response mode")
     if ok then
-        Core.Print(mode == "random" and "🎲 Response mode set to random." or ("📌 Always using message " .. mode .. "."))
+        Core.Print(mode == "random" and "Response mode set to random." or ("Always using message " .. mode .. "."), "FF80FF80")
     end
 end
 
@@ -104,7 +104,7 @@ end
 local function HandleNumber(key, label, args)
     local ok, value = SetSetting(key, args, label)
     if ok then
-        Core.Print("⏱ " .. label .. " set to " .. value .. " seconds.")
+        Core.Print(label .. " set to " .. value .. " seconds.", "FF80FF80")
     end
 end
 
@@ -118,7 +118,7 @@ local function HandleToggle(key, command, label, args)
 
     local enabled = value == "on"
     if SetSetting(key, enabled, label) then
-        Core.Print((enabled and "✅ " or "⛔ ") .. label .. ": " .. (enabled and "on" or "off") .. ".")
+        Core.Print(label .. ": " .. (enabled and "on" or "off") .. ".", enabled and "FF80FF80" or "FFFFFF80")
     end
 end
 
@@ -162,15 +162,15 @@ local commands = {
         Addon.Control.Thank()
     end,
     test = function()
-        Core.Print("🧪 Running local checks; no whisper will be sent.")
+        Core.Print("Running local checks; no whisper will be sent.", "FF80D8FF")
         local passed, total = Addon.Control.RunSelfTest()
-        Core.Print((passed == total and "✅ " or "⚠️ ") .. passed .. "/" .. total .. " checks passed.")
+        Core.Print(passed .. "/" .. total .. " checks passed.", passed == total and "FF80FF80" or "FFFF8080")
     end,
     reset = function()
         Addon.Control.CancelAllScheduled("settings reset")
         Addon.Control.ClearThanks()
         Core.ResetSettings()
-        Core.Print("♻️ Settings restored to defaults.")
+        Core.Print("Settings restored to defaults.", "FF80FF80")
         View.ShowStatus()
     end,
 }
