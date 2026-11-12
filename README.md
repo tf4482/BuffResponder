@@ -1,6 +1,6 @@
 # BuffResponder 🙏✨
 
-BuffResponder is a lightweight World of Warcraft addon that thanks other players with a configurable whisper after they buff you: automatically on Classic Era, with one click on WoW Forever.
+BuffResponder is a lightweight World of Warcraft addon that automatically thanks other players with a configurable whisper after they buff you, on Classic Era and WoW Forever.
 
 ## Supported clients 🎮
 
@@ -17,7 +17,7 @@ One package supports:
 - 🛡 Group and guild exclusions enabled by default
 - 🌍 Realm-safe player identity handling
 - 🔁 Buff application and refresh detection
-- 🖱 One-click thank-you prompt on WoW Forever
+- 🖱 One-click thank-you prompt in WoW Forever instances
 - 🧪 Local self-test that never whispers another player
 - 🔍 Optional diagnostic output
 
@@ -37,7 +37,7 @@ One package supports:
 | `/buffr status` | Show the current configuration |
 | `/buffr on` | Enable replies |
 | `/buffr off` | Disable replies and cancel pending replies and thank-yous |
-| `/buffr thank` | WoW Forever: open the next pending thank-you whisper |
+| `/buffr thank` | WoW Forever instances: open the next pending thank-you whisper |
 | `/buffr message TEXT` | Set message 1 |
 | `/buffr message1 TEXT` … `/buffr message5 TEXT` | Set a specific message |
 | `/buffr message1` … `/buffr message5` | Clear a specific message |
@@ -63,19 +63,20 @@ One package supports:
 
 ## WoW Forever 🌀
 
-WoW Forever does not let addons whisper on their own or read the combat log, so BuffResponder works differently there:
+WoW Forever has no combat log for addons, so BuffResponder watches the auras on your character instead. Outside instances it whispers the player automatically by first name and surname, just like on Classic Era.
 
-1. It watches the auras on your character and recognizes a tracked buff from another player.
-2. After the reply delay it prints a chat line such as `Name buffed you. [Thank] or /buffr thank`.
-3. Click **[Thank]** or type `/buffr thank`: the chat box opens as a whisper to the player (first name and surname) with your message filled in.
-4. Press **Enter** to send it, or **Esc** to skip.
+Inside instances WoW Forever blocks addon chat, so BuffResponder asks you instead:
+
+1. After the reply delay it prints a chat line such as `Name buffed you. [Thank] or /buffr thank`.
+2. Click **[Thank]** or type `/buffr thank`: the chat box opens as a whisper to the player with your message filled in.
+3. Press **Enter** to send it, or **Esc** to skip.
 
 Tip: put `/buffr thank` into a macro on your action bar to thank the next player with one key press.
 
 Limits on WoW Forever:
 
 - Buffs received in combat are not seen, because aura data is secret in combat.
-- The caster must be a known unit (group member, target, mouseover, or visible nameplate); otherwise the buff is ignored.
+- The caster must be a known unit (group member, target, mouseover, or visible nameplate); otherwise the buff is ignored. Showing friendly nameplates (Shift+V) helps.
 
 ## Default behavior ⚙️
 
@@ -103,7 +104,7 @@ The whitelist uses spell IDs and is independent of the game language. All Classi
 
 ## Privacy and anti-spam 🛡️
 
-BuffResponder sends automated whispers on Classic Era when enabled; on WoW Forever you send every whisper yourself. It does not read incoming whispers, communicate through addon channels, download data, or execute chat content.
+BuffResponder sends automated whispers when enabled; in WoW Forever instances you send each whisper yourself. It does not read incoming whispers, communicate through addon channels, download data, or execute chat content.
 
 To reduce unwanted messages, the addon:
 
@@ -159,7 +160,8 @@ Run this checklist separately on Classic Era, Hardcore, Season of Discovery, and
 - [ ] Disabling, resetting, or zoning cancels pending responses.
 - [ ] Changing exclusions during the delay prevents a now-invalid response.
 - [ ] No normal-mode diagnostic spam appears.
-- [ ] WoW Forever: a buff out of combat prints one `[Thank]` line; the link and `/buffr thank` open the prefilled whisper.
+- [ ] WoW Forever: a buff out of combat outside instances sends one whisper to `First Last`.
+- [ ] WoW Forever instances: a buff prints one `[Thank]` line; the link and `/buffr thank` open the prefilled whisper.
 
 ## Project page 🔗
 
