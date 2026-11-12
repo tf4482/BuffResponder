@@ -342,7 +342,11 @@ function Control.Thank(targetKey)
 
     local entry = table.remove(thankQueue, index)
     local openChat = ChatFrameUtil and ChatFrameUtil.OpenChat or ChatFrame_OpenChat
-    openChat("/w " .. entry.name .. " " .. entry.message)
+    -- Next frame: after a slash command Blizzard clears and hides the chat box
+    C_Timer.After(0, function()
+        openChat("/w " .. entry.name .. " " .. entry.message)
+    end)
+    Core.Print(Static.Icons.star .. "Whisper to " .. entry.name .. " ready; press Enter to send.")
     return true
 end
 

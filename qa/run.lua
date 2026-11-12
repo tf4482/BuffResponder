@@ -88,6 +88,10 @@ function CreateFrame()
 end
 
 C_Timer = {}
+-- Deferred calls run at once in the harness
+function C_Timer.After(_, callback)
+    callback()
+end
 function C_Timer.NewTimer(delay, callback)
     local timer = { delay = delay, callback = callback, cancelled = false }
     function timer:Cancel()
