@@ -13,6 +13,8 @@ local guildMembers = {}
 local playerCooldowns = {}
 local scheduledWhispers = {}
 local thankQueue = {}
+local unknownCasterHintShown = false
+local NAMEPLATE_CVAR = "nameplateShowFriendlyPlayers"
 local THANK_LINK_PREFIX = "addon:" .. Addon.Name .. ":thank:"
 
 -- Strip spaces and dashes so realm names compare reliably
@@ -324,8 +326,17 @@ local function HandleAura(aura, isUpdate)
 
     -- The caster is only known while it has a unit token (group, target, mouseover, nameplate)
     local unit = aura.sourceUnit
-    if not unit or not UnitIsPlayer(unit) or UnitIsUnit(unit, "player") then
-        Core.Debug("Ignored " .. tostring(aura.name) .. ": caster is unknown, not a player, or yourself.")
+    if not unit then
+        Core.Debug("Ignored " .. tostring(aura.name) .. ": caster is unknown.")
+        -- One hint per session while friendly nameplates are hidden
+        if not unknownCasterHintShown and C_CVar.GetCVar(NAMEPLATE_CVAR) ~= "1" then
+            unknownCasterHintShown = true
+            Core.Print(Static.Icons.info .. "Got " .. tostring(aura.name) .. " from a player BuffResponder cannot see. Show friendly nameplates (Shift+V) or type |cFFFFFF00/buffr nameplates on|r.", "FF80D8FF")
+        end
+        return
+    end
+    if not UnitIsPlayer(unit) or UnitIsUnit(unit, "player") then
+        Core.Debug("Ignored " .. tostring(aura.name) .. ": caster is not a player, or yourself.")
         return
     end
 
@@ -393,6 +404,24 @@ end
 -- Number of thank-you prompts waiting for the player
 function Control.GetPendingThankCount()
     return #thankQueue
+end
+
+-- WoW Forever: show friendly nameplates while wanted, otherwise restore the player's own value
+function Control.ApplyNameplates()
+    -- Nameplate CVars cannot change in combat; PLAYER_REGEN_ENABLED calls this again
+    if not Static.IsForever or InCombatLockdown() then
+        return
+    end
+
+    local wanted = Core.GetSetting("enabled") and Core.GetSetting("friendlyNameplates")
+    local backup = Core.GetSetting("nameplateBackup")
+    if wanted and backup == "" then
+        Core.SetSetting("nameplateBackup", C_CVar.GetCVar(NAMEPLATE_CVAR) or "0")
+        C_CVar.SetCVar(NAMEPLATE_CVAR, "1")
+    elseif not wanted and backup ~= "" then
+        C_CVar.SetCVar(NAMEPLATE_CVAR, backup)
+        Core.SetSetting("nameplateBackup", "")
+    end
 end
 
 -- Forget all pending thank-you prompts

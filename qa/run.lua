@@ -25,6 +25,7 @@ local guildRoster = {}
 local interfaceVersion = 11509
 local auraSecret = false
 local inInstance = false
+local cvars = { nameplateShowFriendlyPlayers = "0" }
 local openedChat
 local whisperTarget
 local linkCallback
@@ -33,6 +34,19 @@ local linkCallback
 function GetBuildInfo()
     return "test", "0", "", interfaceVersion
 end
+
+function InCombatLockdown()
+    return false
+end
+
+C_CVar = {
+    GetCVar = function(name)
+        return cvars[name]
+    end,
+    SetCVar = function(name, value)
+        cvars[name] = value
+    end,
+}
 
 function IsInInstance()
     return inInstance
@@ -330,8 +344,26 @@ local function FireAura(spellId, sourceUnit)
 end
 
 timerCount = #timers
+-- Count chat lines that contain a text
+local function CountOutput(text)
+    local count = 0
+    for _, line in ipairs(output) do
+        if line:find(text, 1, true) then
+            count = count + 1
+        end
+    end
+    return count
+end
+
 FireAura(1243, nil)
 Check("aura with unknown caster is ignored", #timers == timerCount)
+FireAura(1243, nil)
+Check("unknown caster hint shows once", CountOutput("/buffr nameplates on") == 1)
+
+SlashCmdList.BUFFR("nameplates on")
+Check("nameplates on shows friendly nameplates", cvars.nameplateShowFriendlyPlayers == "1" and DB_BuffResponder.nameplateBackup == "0")
+SlashCmdList.BUFFR("nameplates off")
+Check("nameplates off restores the old value", cvars.nameplateShowFriendlyPlayers == "0" and DB_BuffResponder.nameplateBackup == "")
 
 auraSecret = true
 FireAura(1243, "nameplate1")
