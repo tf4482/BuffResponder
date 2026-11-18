@@ -1,16 +1,13 @@
 # BuffResponder 🙏✨
 
-BuffResponder is a lightweight World of Warcraft Classic addon that sends a configurable thank-you whisper after another player buffs you.
+BuffResponder is a lightweight World of Warcraft addon that automatically thanks other players with a configurable whisper after they buff you, on Classic Era and WoW Forever.
 
 ## Supported clients 🎮
 
-One Classic build supports:
+One package supports:
 
-- World of Warcraft Classic Era
-- Classic Hardcore
-- Season of Discovery
-
-The current package targets Classic Era client `1.15.9` with interface `11509`.
+- World of Warcraft Classic Era, Classic Hardcore, and Season of Discovery (interface `11509`)
+- WoW Forever (interface `16001`)
 
 ## Features 🎯
 
@@ -20,14 +17,16 @@ The current package targets Classic Era client `1.15.9` with interface `11509`.
 - 🛡 Group and guild exclusions enabled by default
 - 🌍 Realm-safe player identity handling
 - 🔁 Buff application and refresh detection
+- 🖱 One-click thank-you prompt in WoW Forever instances
+- 👀 Optional friendly nameplates on WoW Forever so buffers are recognized
 - 🧪 Local self-test that never whispers another player
 - 🔍 Optional diagnostic output
 
 ## Installation 📦
 
 1. Close World of Warcraft.
-2. Copy the `BuffResponder` folder into `_classic_era_/Interface/AddOns/`.
-3. Start Classic Era, Hardcore, or Season of Discovery.
+2. Copy the `BuffResponder` folder into `Interface/AddOns/` of your Classic Era (`_classic_era_`) or WoW Forever installation.
+3. Start the game.
 4. Enable **BuffResponder** in the character-select **AddOns** menu.
 5. Enter the world and type `/buffr status`.
 
@@ -37,8 +36,9 @@ The current package targets Classic Era client `1.15.9` with interface `11509`.
 |---|---|
 | `/buffr` or `/buffr help` | Show in-game help |
 | `/buffr status` | Show the current configuration |
-| `/buffr on` | Enable automatic replies |
-| `/buffr off` | Disable replies and cancel pending replies |
+| `/buffr on` | Enable replies |
+| `/buffr off` | Disable replies and cancel pending replies and thank-yous |
+| `/buffr thank` | WoW Forever instances: open the next pending thank-you whisper |
 | `/buffr message TEXT` | Set message 1 |
 | `/buffr message1 TEXT` … `/buffr message5 TEXT` | Set a specific message |
 | `/buffr message1` … `/buffr message5` | Clear a specific message |
@@ -48,20 +48,50 @@ The current package targets Classic Era client `1.15.9` with interface `11509`.
 | `/buffr cooldown 60` | Set per-player cooldown from 0 to 3600 seconds |
 | `/buffr excludegroup on\|off` | Toggle party and raid exclusion |
 | `/buffr excludeguild on\|off` | Toggle guild exclusion |
+| `/buffr nameplates on\|off` | WoW Forever: show friendly nameplates while BuffResponder is enabled |
 | `/buffr debug on\|off` | Toggle diagnostic messages |
 | `/buffr test` | Run local checks without sending a whisper |
 | `/buffr reset` | Restore defaults and cancel pending replies |
 
+### Examples 💡
+
+```text
+/buffr message1 Thanks for the buff, have a great day!
+/buffr mode random
+/buffr delay 2
+/buffr cooldown 300
+/buffr excludeguild off
+```
+
+## WoW Forever 🌀
+
+WoW Forever has no combat log for addons, so BuffResponder watches the auras on your character instead. Outside instances it whispers the player automatically by first name and surname, just like on Classic Era.
+
+Inside instances WoW Forever blocks addon chat, so BuffResponder asks you instead:
+
+1. After the reply delay it prints a chat line such as `Name buffed you. [Thank] or /buffr thank`.
+2. Click **[Thank]** or type `/buffr thank`: the chat box opens as a whisper to the player with your message filled in.
+3. Press **Enter** to send it, or **Esc** to skip.
+
+Tip: put `/buffr thank` into a macro on your action bar to thank the next player with one key press.
+
+Limits on WoW Forever:
+
+- Buffs received in combat are not seen, because aura data is secret in combat.
+- The caster must be a known unit (group member, target, mouseover, or visible nameplate); otherwise the buff is ignored. WoW Forever gives addons no other way to see who cast a buff.
+
+Friendly nameplates make nearby players known units. Toggle them yourself with **Shift+V**, or let BuffResponder do it with `/buffr nameplates on`: it shows them while the addon is enabled and restores your previous setting with `/buffr nameplates off`, `/buffr off`, or `/buffr reset`. Without them, BuffResponder prints a one-time hint per session when it misses a buffer.
+
 ## Default behavior ⚙️
 
-- Automatic replies are enabled.
+- Replies are enabled.
 - A response waits 4 seconds.
 - Each player has a 60-second cooldown after a reply.
 - Group and guild members are excluded.
 - A random non-empty response is selected.
 - Buff tracking waits 8 seconds after entering the world to ignore login and zoning aura noise.
 - Pending replies are cancelled when zoning, disabling the addon, or resetting settings.
-- Every condition is checked again immediately before a whisper is sent.
+- Every condition is checked again immediately before a whisper is sent or a thank-you is offered.
 
 ## Recognized buffs ✨
 
@@ -78,7 +108,7 @@ The whitelist uses spell IDs and is independent of the game language. All Classi
 
 ## Privacy and anti-spam 🛡️
 
-BuffResponder sends automated whispers when enabled. It does not read incoming whispers, communicate through addon channels, download data, or execute chat content.
+BuffResponder sends automated whispers when enabled; in WoW Forever instances you send each whisper yourself. It does not read incoming whispers, communicate through addon channels, download data, or execute chat content.
 
 To reduce unwanted messages, the addon:
 
@@ -104,7 +134,7 @@ Use `/buffr off` whenever automatic communication is not appropriate.
 
 ### The addon is marked out of date
 
-The Classic interface number changes with game patches. Update the `## Interface` value in `BuffResponder.toc` to the value required by the installed Classic Era client, then validate the addon before release.
+Interface numbers change with game patches. Check the client's number with `/dump select(4, GetBuildInfo())` and update the matching value in the `## Interface` line of `BuffResponder.toc`.
 
 ## Development tests 🧪
 
@@ -116,11 +146,11 @@ With a Lua 5.1-compatible interpreter installed, run:
 lua qa\run.lua
 ```
 
-The harness checks settings migration and validation, identity normalization, slash commands, buff filtering, group and guild exclusions, timer cancellation, delayed send revalidation, and cooldown expiry.
+The harness checks settings migration and validation, identity normalization, slash commands, buff filtering, group and guild exclusions, timer cancellation, delayed send revalidation, cooldown expiry, and the WoW Forever aura detection and thank-you prompt.
 
 ## Release smoke test ✅
 
-Run this checklist separately on Classic Era, Hardcore, and Season of Discovery:
+Run this checklist separately on Classic Era, Hardcore, Season of Discovery, and WoW Forever:
 
 - [ ] The addon loads without Lua errors.
 - [ ] `/buffr`, `/buffr status`, and `/buffr test` render correctly.
@@ -134,7 +164,13 @@ Run this checklist separately on Classic Era, Hardcore, and Season of Discovery:
 - [ ] Disabling, resetting, or zoning cancels pending responses.
 - [ ] Changing exclusions during the delay prevents a now-invalid response.
 - [ ] No normal-mode diagnostic spam appears.
+- [ ] WoW Forever: a buff out of combat outside instances sends one whisper to `First Last`.
+- [ ] WoW Forever instances: a buff prints one `[Thank]` line; the link and `/buffr thank` open the prefilled whisper.
 
 ## Project page 🔗
 
 [BuffResponder on CurseForge](https://www.curseforge.com/wow/addons/buffresponder)
+
+## License 📄
+
+MIT, see [LICENSE](LICENSE).

@@ -1,8 +1,28 @@
+-- Static data: defaults, limits, client detection, and the buff whitelist
 local _, Addon = ...
 Addon.Static = Addon.Static or {}
 
 Addon.Static.SchemaVersion = 2
 
+-- WoW Forever (interface 16xxx): no combat log and no automated whispers for addons
+local interfaceVersion = select(4, GetBuildInfo()) or 0
+Addon.Static.IsForever = interfaceVersion >= 16000 and interfaceVersion < 17000
+
+-- Inline chat icon from a game texture
+local function Icon(path)
+    return "|T" .. path .. ":0|t "
+end
+
+-- Blizzard chat icons instead of emojis, which the game font cannot render
+Addon.Static.Icons = {
+    ok = Icon("Interface\\RaidFrame\\ReadyCheck-Ready"),
+    fail = Icon("Interface\\RaidFrame\\ReadyCheck-NotReady"),
+    off = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_2"),
+    info = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_6"),
+    star = Icon("Interface\\TargetingFrame\\UI-RaidTargetingIcon_1"),
+}
+
+-- Default settings for a fresh or reset profile
 Addon.Static.Defaults = {
     schemaVersion = Addon.Static.SchemaVersion,
     enabled = true,
@@ -17,8 +37,11 @@ Addon.Static.Defaults = {
     debugMode = false,
     excludeGroup = true,
     excludeGuild = true,
+    friendlyNameplates = false,
+    nameplateBackup = "",
 }
 
+-- Validation bounds and the world-entry grace period
 Addon.Static.Limits = {
     messageLength = 255,
     replyDelayMin = 0,
@@ -28,13 +51,16 @@ Addon.Static.Limits = {
     gracePeriod = 8,
 }
 
+-- Settings that only accept true or false
 Addon.Static.BooleanSettings = {
     enabled = true,
     debugMode = true,
     excludeGroup = true,
     excludeGuild = true,
+    friendlyNameplates = true,
 }
 
+-- Combat log subevents that count as a received buff (Classic Era only)
 Addon.Static.AuraEvents = {
     SPELL_AURA_APPLIED = true,
     SPELL_AURA_REFRESH = true,

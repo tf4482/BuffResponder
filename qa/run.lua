@@ -1,6 +1,8 @@
+-- Mocked-WoW test harness for BuffResponder; run with: lua qa/run.lua
 local failures = 0
 local tests = 0
 
+-- Record and print one test result
 local function Check(name, condition)
     tests = tests + 1
     if condition then
@@ -20,6 +22,80 @@ local playerGUID = "Player-1-00000001"
 local groupUnits = {}
 local inGroup = false
 local guildRoster = {}
+local interfaceVersion = 11509
+local auraSecret = false
+local inInstance = false
+local cvars = { nameplateShowFriendlyPlayers = "0" }
+local openedChat
+local whisperTarget
+local linkCallback
+
+-- WoW API mocks
+function GetBuildInfo()
+    return "test", "0", "", interfaceVersion
+end
+
+function InCombatLockdown()
+    return false
+end
+
+C_CVar = {
+    GetCVar = function(name)
+        return cvars[name]
+    end,
+    SetCVar = function(name, value)
+        cvars[name] = value
+    end,
+}
+
+function IsInInstance()
+    return inInstance
+end
+
+function UnitIsPlayer(unit)
+    return groupUnits[unit] ~= nil
+end
+
+function UnitIsUnit(unit, other)
+    return unit == other
+end
+
+C_Secrets = {
+    ShouldAurasBeSecret = function()
+        return auraSecret
+    end,
+}
+
+C_UnitAuras = {
+    GetAuraDataByAuraInstanceID = function()
+    end,
+}
+
+EventRegistry = {
+    RegisterCallback = function(_, _, callback, owner)
+        linkCallback = function(link)
+            callback(owner, link)
+        end
+    end,
+}
+
+-- Chat edit box that records the whisper target
+local editBox = {
+    SetChatType = function() end,
+    SetTellTarget = function(_, target)
+        whisperTarget = target
+    end,
+    UpdateHeader = function() end,
+}
+
+ChatFrameUtil = {
+    ChooseBoxForSend = function()
+        return editBox
+    end,
+    OpenChat = function(text)
+        openedChat = text
+    end,
+}
 
 function print(message)
     output[#output + 1] = tostring(message)
@@ -28,6 +104,9 @@ end
 function CreateFrame()
     local frame = { events = {} }
     function frame:RegisterEvent(event)
+        self.events[event] = true
+    end
+    function frame:RegisterUnitEvent(event)
         self.events[event] = true
     end
     function frame:UnregisterEvent(event)
@@ -41,6 +120,10 @@ function CreateFrame()
 end
 
 C_Timer = {}
+-- Deferred calls run at once in the harness
+function C_Timer.After(_, callback)
+    callback()
+end
 function C_Timer.NewTimer(delay, callback)
     local timer = { delay = delay, callback = callback, cancelled = false }
     function timer:Cancel()
@@ -65,8 +148,7 @@ function UnitFullName(unit)
 end
 
 function UnitName(unit)
-    local name = UnitFullName(unit)
-    return name
+    return UnitFullName(unit)
 end
 
 function UnitExists(unit)
@@ -142,20 +224,20 @@ DB_BuffResponder = {
     obsolete = true,
 }
 
-local Addon = {}
-local function LoadAddonFile(path)
-    local chunk = assert(loadfile(path))
-    chunk("BuffResponder", Addon)
+-- Load all addon files in TOC order into a fresh private table and log in
+local function LoadAddon()
+    local addon = {}
+    for _, path in ipairs({ "Static.lua", "Core.lua", "Control.lua", "View.lua" }) do
+        assert(loadfile(path))("BuffResponder", addon)
+    end
+    local eventFrame = frames[#frames]
+    eventFrame.callback(eventFrame, "ADDON_LOADED", "BuffResponder")
+    eventFrame.callback(eventFrame, "PLAYER_LOGIN")
+    return addon, eventFrame
 end
 
-LoadAddonFile("Static.lua")
-LoadAddonFile("Core.lua")
-LoadAddonFile("Control.lua")
-LoadAddonFile("View.lua")
-
-local eventFrame = frames[1]
-eventFrame.callback(eventFrame, "ADDON_LOADED", "BuffResponder")
-eventFrame.callback(eventFrame, "PLAYER_LOGIN")
+local Addon, eventFrame = LoadAddon()
+Check("classic client uses the combat log", eventFrame.events.COMBAT_LOG_EVENT_UNFILTERED and not eventFrame.events.UNIT_AURA)
 
 Check("false setting survives migration", Addon.Core.GetSetting("enabled") == false)
 Check("legacy message migrates and trims", Addon.Core.GetSetting("message1") == "legacy")
@@ -183,6 +265,7 @@ SlashCmdList.BUFFR("message1 cheers")
 Check("commands update validated settings", Addon.Core.GetSetting("enabled") and Addon.Core.GetSetting("replyDelay") == 2)
 Check("message command updates text", Addon.Core.GetSetting("message1") == "cheers")
 
+-- Simulate a combat log aura event on the player
 local function FireBuff(spellId, sourceName)
     Addon.Control.HandleCombatLog(
         now,
@@ -248,6 +331,70 @@ Check("guild member is excluded", #timers == timerCount)
 
 local passed, total = Addon.Control.RunSelfTest()
 Check("local self-test passes", passed == total)
+
+-- WoW Forever: aura detection and a manual thank-you prompt instead of whispers
+interfaceVersion = 16001
+Addon, eventFrame = LoadAddon()
+Check("forever client uses UNIT_AURA", eventFrame.events.UNIT_AURA and not eventFrame.events.COMBAT_LOG_EVENT_UNFILTERED)
+
+groupUnits.nameplate1 = { "Helper", "Stormgaard" }
+-- Simulate a buff added to the player on WoW Forever
+local function FireAura(spellId, sourceUnit)
+    Addon.Control.HandleAuraUpdate({ addedAuras = { { spellId = spellId, name = "Power Word: Fortitude", sourceUnit = sourceUnit } } })
+end
+
+timerCount = #timers
+-- Count chat lines that contain a text
+local function CountOutput(text)
+    local count = 0
+    for _, line in ipairs(output) do
+        if line:find(text, 1, true) then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+FireAura(1243, nil)
+Check("aura with unknown caster is ignored", #timers == timerCount)
+FireAura(1243, nil)
+Check("unknown caster hint shows once", CountOutput("/buffr nameplates on") == 1)
+
+SlashCmdList.BUFFR("nameplates on")
+Check("nameplates on shows friendly nameplates", cvars.nameplateShowFriendlyPlayers == "1" and DB_BuffResponder.nameplateBackup == "0")
+SlashCmdList.BUFFR("nameplates off")
+Check("nameplates off restores the old value", cvars.nameplateShowFriendlyPlayers == "0" and DB_BuffResponder.nameplateBackup == "")
+
+auraSecret = true
+FireAura(1243, "nameplate1")
+Check("secret aura data is skipped", #timers == timerCount)
+auraSecret = false
+
+sentCount = #sentMessages
+FireAura(1243, "nameplate1")
+timers[#timers].callback()
+Check("forever whispers automatically outside instances", #sentMessages == sentCount + 1)
+Check("whisper goes to first name and surname", sentMessages[#sentMessages].target == "Helper Stormgaard")
+
+groupUnits.nameplate2 = { "Healer", "Brightwood" }
+inInstance = true
+sentCount = #sentMessages
+FireAura(1243, "nameplate2")
+timers[#timers].callback()
+Check("instance blocks the automatic whisper", #sentMessages == sentCount)
+Check("instance queues a thank-you instead", Addon.Control.GetPendingThankCount() == 1)
+Check("chat line carries a thank link", output[#output]:find("|Haddon:BuffResponder:thank:healer brightwood|h", 1, true) ~= nil)
+
+linkCallback("addon:BuffResponder:thank:healer brightwood")
+Check("thank link opens a prefilled whisper", openedChat == "cheers" and whisperTarget == "Healer Brightwood")
+Check("thanked player leaves the queue", Addon.Control.GetPendingThankCount() == 0)
+
+openedChat = nil
+SlashCmdList.BUFFR("thank")
+Check("empty queue opens nothing", openedChat == nil)
+
+passed, total = Addon.Control.RunSelfTest()
+Check("forever self-test passes", passed == total)
 
 io.write("\n")
 if failures == 0 then

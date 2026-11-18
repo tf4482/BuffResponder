@@ -1,3 +1,4 @@
+-- Settings, player identity, world-entry grace period, and event dispatch
 local addonName, Addon = ...
 Addon.Core = Addon.Core or {}
 Addon.Name = addonName
@@ -12,6 +13,7 @@ local graceTimer
 local isInGracePeriod = true
 local isInitialized = false
 
+-- Shallow table copy
 local function CopyTable(source)
     local copy = {}
     for key, value in pairs(source) do
@@ -20,6 +22,7 @@ local function CopyTable(source)
     return copy
 end
 
+-- Trim surrounding whitespace; non-strings become empty
 local function Trim(value)
     if type(value) ~= "string" then
         return ""
@@ -27,6 +30,7 @@ local function Trim(value)
     return value:match("^%s*(.-)%s*$")
 end
 
+-- TOC metadata on old and new clients
 local function GetMetadata(field)
     if C_AddOns and C_AddOns.GetAddOnMetadata then
         return C_AddOns.GetAddOnMetadata(addonName, field)
@@ -36,6 +40,7 @@ local function GetMetadata(field)
     end
 end
 
+-- Strip spaces and dashes from a realm name
 local function NormalizeRealm(realm)
     if type(realm) ~= "string" then
         return ""
@@ -43,12 +48,21 @@ local function NormalizeRealm(realm)
     return realm:gsub("[%s%-]", "")
 end
 
+-- Validate and normalize one setting value
 local function NormalizeSetting(key, value)
     if Static.BooleanSettings[key] then
         if type(value) == "boolean" then
             return value
         end
         return nil, "must be on or off"
+    end
+
+    -- Player's own friendly nameplate CVar value while BuffResponder overrides it
+    if key == "nameplateBackup" then
+        if type(value) == "string" then
+            return value
+        end
+        return nil, "must be text"
     end
 
     if key:match("^message[1-5]$") then
@@ -94,6 +108,7 @@ local function NormalizeSetting(key, value)
     return nil, "is not a configurable setting"
 end
 
+-- Complete, valid settings table from saved data
 local function BuildSettings(source)
     source = type(source) == "table" and source or {}
 
@@ -116,11 +131,13 @@ local function BuildSettings(source)
     return normalized
 end
 
+-- Load and repair the saved settings
 local function InitializeSettings()
     settings = BuildSettings(DB_BuffResponder)
     DB_BuffResponder = settings
 end
 
+-- Read the player's name and realm
 local function RefreshPlayerInfo()
     local name, realm
     if UnitFullName then
@@ -141,6 +158,7 @@ local function RefreshPlayerInfo()
     end
 end
 
+-- Stop a running grace period timer
 local function CancelGracePeriod()
     if graceTimer then
         graceTimer:Cancel()
@@ -148,6 +166,7 @@ local function CancelGracePeriod()
     end
 end
 
+-- Ignore aura noise for a few seconds after login or zoning
 local function StartGracePeriod()
     CancelGracePeriod()
     isInGracePeriod = true
@@ -170,8 +189,17 @@ local function StartGracePeriod()
     graceTimer = timer
 end
 
+-- Ask the server for a fresh guild roster (C_GuildInfo on WoW Forever)
+local function RequestGuildRoster()
+    local request = C_GuildInfo and C_GuildInfo.GuildRoster or GuildRoster
+    if IsInGuild() and request then
+        request()
+    end
+end
+
 local frame = CreateFrame("Frame")
 
+-- Central event handler
 local function OnEvent(_, event, ...)
     if event == "ADDON_LOADED" then
         local loadedAddon = ...
@@ -181,6 +209,7 @@ local function OnEvent(_, event, ...)
 
         InitializeSettings()
         Addon.View.Initialize()
+        Addon.Control.RegisterThankLinks()
         isInitialized = true
         frame:UnregisterEvent("ADDON_LOADED")
         return
@@ -193,24 +222,26 @@ local function OnEvent(_, event, ...)
     if event == "PLAYER_LOGIN" then
         RefreshPlayerInfo()
         Addon.Control.Initialize(playerName, playerRealm, playerFullName)
-        if IsInGuild() and GuildRoster then
-            GuildRoster()
-        end
+        RequestGuildRoster()
         Addon.Control.RefreshGuildRoster()
-        Core.Print("Loaded v" .. Core.GetVersion() .. ". Type |cFFFFFF00/buffr|r for options.")
+        Addon.Control.ApplyNameplates()
+        Core.Print(Static.Icons.star .. "Loaded v" .. Core.GetVersion() .. ". Type |cFFFFFF00/buffr|r for options.")
     elseif event == "PLAYER_ENTERING_WORLD" then
         RefreshPlayerInfo()
         Addon.Control.Initialize(playerName, playerRealm, playerFullName)
         StartGracePeriod()
     elseif event == "PLAYER_GUILD_UPDATE" then
-        if IsInGuild() and GuildRoster then
-            GuildRoster()
-        end
+        RequestGuildRoster()
         Addon.Control.RefreshGuildRoster()
     elseif event == "GUILD_ROSTER_UPDATE" then
         Addon.Control.RefreshGuildRoster()
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        Addon.Control.ApplyNameplates()
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and not isInGracePeriod then
         Addon.Control.HandleCombatLog(CombatLogGetCurrentEventInfo())
+    elseif event == "UNIT_AURA" and not isInGracePeriod then
+        local _, updateInfo = ...
+        Addon.Control.HandleAuraUpdate(updateInfo)
     end
 end
 
@@ -219,36 +250,49 @@ frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("GUILD_ROSTER_UPDATE")
 frame:RegisterEvent("PLAYER_GUILD_UPDATE")
-frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+-- WoW Forever has no combat log for addons; it watches the player's auras instead
+if Static.IsForever then
+    frame:RegisterUnitEvent("UNIT_AURA", "player")
+    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+else
+    frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+end
 frame:SetScript("OnEvent", OnEvent)
 
+-- Public trim helper
 function Core.Trim(value)
     return Trim(value)
 end
 
+-- Colored chat line with the addon prefix
 function Core.Print(message, color)
     local messageColor = color or "FFFFFFFF"
     print("|cFF00FF00BuffResponder:|r |c" .. messageColor .. tostring(message) .. "|r")
 end
 
+-- Diagnostic line, only in debug mode
 function Core.Debug(message)
     if settings and settings.debugMode then
-        Core.Print("🔍 " .. tostring(message), "FF80D8FF")
+        Core.Print(Static.Icons.info .. tostring(message), "FF80D8FF")
     end
 end
 
+-- Addon version from the TOC
 function Core.GetVersion()
     return GetMetadata("Version") or "dev"
 end
 
+-- One setting value
 function Core.GetSetting(key)
     return settings and settings[key]
 end
 
+-- Copy of all settings
 function Core.GetSettings()
     return settings and CopyTable(settings) or {}
 end
 
+-- Validate and store one setting
 function Core.SetSetting(key, value)
     if not settings or Static.Defaults[key] == nil or key == "schemaVersion" then
         return false, "unknown setting"
@@ -263,16 +307,19 @@ function Core.SetSetting(key, value)
     return true, normalized
 end
 
+-- Player name, realm, and full name
 function Core.GetPlayerInfo()
     return playerName, playerRealm, playerFullName
 end
 
+-- Restore all defaults; keep the nameplate backup so it can still be restored
 function Core.ResetSettings()
-    settings = BuildSettings({})
+    settings = BuildSettings({ nameplateBackup = settings and settings.nameplateBackup })
     DB_BuffResponder = settings
     return Core.GetSettings()
 end
 
+-- Internals exposed to qa/run.lua
 Core._Test = {
     BuildSettings = BuildSettings,
     NormalizeSetting = NormalizeSetting,
