@@ -170,3 +170,7 @@ Run this checklist separately on Classic Era, Hardcore, Season of Discovery, and
 ## Project page 🔗
 
 [BuffResponder on CurseForge](https://www.curseforge.com/wow/addons/buffresponder)
+
+## License 📄
+
+MIT, see [LICENSE](LICENSE).
