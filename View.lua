@@ -36,6 +36,9 @@ local function ShowHelp()
     print("|cFF80D8FF/buffr cooldown [0-" .. Static.Limits.cooldownDelayMax .. "]|r — set per-player cooldown")
     print("|cFF80D8FF/buffr excludegroup on|off|r — ignore group members")
     print("|cFF80D8FF/buffr excludeguild on|off|r — ignore guild members")
+    if Static.IsForever then
+        print("|cFF80D8FF/buffr nameplates on|off|r — show friendly nameplates so buffers are recognized")
+    end
     print("|cFF80D8FF/buffr debug on|off|r — toggle diagnostic output")
     print("|cFF80D8FF/buffr test|r — run local checks without whispering")
     print("|cFF80D8FF/buffr reset|r — restore all defaults")
@@ -56,6 +59,9 @@ function View.ShowStatus()
     print("  Cooldown: |cFFFFFF80" .. settings.cooldownDelay .. " seconds|r")
     print("  Exclude group: " .. State(settings.excludeGroup))
     print("  Exclude guild: " .. State(settings.excludeGuild))
+    if Static.IsForever then
+        print("  Friendly nameplates: " .. State(settings.friendlyNameplates))
+    end
     print("  Debug: " .. State(settings.debugMode))
     if Static.IsForever then
         print("  Pending thank-yous: |cFFFFFF80" .. Addon.Control.GetPendingThankCount() .. "|r")
@@ -69,6 +75,7 @@ local function HandleEnabled(enabled)
         Addon.Control.CancelAllScheduled("addon disabled")
         Addon.Control.ClearThanks()
     end
+    Addon.Control.ApplyNameplates()
     Core.Print(enabled and (Static.Icons.ok .. "Replies enabled.") or (Static.Icons.off .. "Replies disabled."), enabled and "FF80FF80" or "FFFFFF80")
 end
 
@@ -151,6 +158,17 @@ local commands = {
     excludeguild = function(args)
         HandleToggle("excludeGuild", "excludeguild", "Exclude guild", args)
     end,
+    nameplates = function(args)
+        if not Static.IsForever then
+            Core.Print(Static.Icons.info .. "Only needed on WoW Forever.")
+            return
+        end
+        HandleToggle("friendlyNameplates", "nameplates", "Friendly nameplates", args)
+        Addon.Control.ApplyNameplates()
+        if InCombatLockdown() then
+            Core.Print(Static.Icons.info .. "Nameplates change after combat.", "FF80D8FF")
+        end
+    end,
     debug = function(args)
         HandleToggle("debugMode", "debug", "Debug", args)
     end,
@@ -170,6 +188,7 @@ local commands = {
         Addon.Control.CancelAllScheduled("settings reset")
         Addon.Control.ClearThanks()
         Core.ResetSettings()
+        Addon.Control.ApplyNameplates()
         Core.Print(Static.Icons.ok .. "Settings restored to defaults.", "FF80FF80")
         View.ShowStatus()
     end,

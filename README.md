@@ -18,6 +18,7 @@ One package supports:
 - 🌍 Realm-safe player identity handling
 - 🔁 Buff application and refresh detection
 - 🖱 One-click thank-you prompt in WoW Forever instances
+- 👀 Optional friendly nameplates on WoW Forever so buffers are recognized
 - 🧪 Local self-test that never whispers another player
 - 🔍 Optional diagnostic output
 
@@ -47,6 +48,7 @@ One package supports:
 | `/buffr cooldown 60` | Set per-player cooldown from 0 to 3600 seconds |
 | `/buffr excludegroup on\|off` | Toggle party and raid exclusion |
 | `/buffr excludeguild on\|off` | Toggle guild exclusion |
+| `/buffr nameplates on\|off` | WoW Forever: show friendly nameplates while BuffResponder is enabled |
 | `/buffr debug on\|off` | Toggle diagnostic messages |
 | `/buffr test` | Run local checks without sending a whisper |
 | `/buffr reset` | Restore defaults and cancel pending replies |
@@ -76,7 +78,9 @@ Tip: put `/buffr thank` into a macro on your action bar to thank the next player
 Limits on WoW Forever:
 
 - Buffs received in combat are not seen, because aura data is secret in combat.
-- The caster must be a known unit (group member, target, mouseover, or visible nameplate); otherwise the buff is ignored. Showing friendly nameplates (Shift+V) helps.
+- The caster must be a known unit (group member, target, mouseover, or visible nameplate); otherwise the buff is ignored. WoW Forever gives addons no other way to see who cast a buff.
+
+Friendly nameplates make nearby players known units. Toggle them yourself with **Shift+V**, or let BuffResponder do it with `/buffr nameplates on`: it shows them while the addon is enabled and restores your previous setting with `/buffr nameplates off`, `/buffr off`, or `/buffr reset`. Without them, BuffResponder prints a one-time hint per session when it misses a buffer.
 
 ## Default behavior ⚙️
 

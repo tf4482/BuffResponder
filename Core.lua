@@ -57,6 +57,14 @@ local function NormalizeSetting(key, value)
         return nil, "must be on or off"
     end
 
+    -- Player's own friendly nameplate CVar value while BuffResponder overrides it
+    if key == "nameplateBackup" then
+        if type(value) == "string" then
+            return value
+        end
+        return nil, "must be text"
+    end
+
     if key:match("^message[1-5]$") then
         if type(value) ~= "string" then
             return nil, "must be text"
@@ -216,6 +224,7 @@ local function OnEvent(_, event, ...)
         Addon.Control.Initialize(playerName, playerRealm, playerFullName)
         RequestGuildRoster()
         Addon.Control.RefreshGuildRoster()
+        Addon.Control.ApplyNameplates()
         Core.Print(Static.Icons.star .. "Loaded v" .. Core.GetVersion() .. ". Type |cFFFFFF00/buffr|r for options.")
     elseif event == "PLAYER_ENTERING_WORLD" then
         RefreshPlayerInfo()
@@ -226,6 +235,8 @@ local function OnEvent(_, event, ...)
         Addon.Control.RefreshGuildRoster()
     elseif event == "GUILD_ROSTER_UPDATE" then
         Addon.Control.RefreshGuildRoster()
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        Addon.Control.ApplyNameplates()
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and not isInGracePeriod then
         Addon.Control.HandleCombatLog(CombatLogGetCurrentEventInfo())
     elseif event == "UNIT_AURA" and not isInGracePeriod then
@@ -242,6 +253,7 @@ frame:RegisterEvent("PLAYER_GUILD_UPDATE")
 -- WoW Forever has no combat log for addons; it watches the player's auras instead
 if Static.IsForever then
     frame:RegisterUnitEvent("UNIT_AURA", "player")
+    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 else
     frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 end
@@ -300,9 +312,9 @@ function Core.GetPlayerInfo()
     return playerName, playerRealm, playerFullName
 end
 
--- Restore all defaults
+-- Restore all defaults; keep the nameplate backup so it can still be restored
 function Core.ResetSettings()
-    settings = BuildSettings({})
+    settings = BuildSettings({ nameplateBackup = settings and settings.nameplateBackup })
     DB_BuffResponder = settings
     return Core.GetSettings()
 end

@@ -37,6 +37,8 @@ Addon.Static.Defaults = {
     debugMode = false,
     excludeGroup = true,
     excludeGuild = true,
+    friendlyNameplates = false,
+    nameplateBackup = "",
 }
 
 -- Validation bounds and the world-entry grace period
@@ -55,6 +57,7 @@ Addon.Static.BooleanSettings = {
     debugMode = true,
     excludeGroup = true,
     excludeGuild = true,
+    friendlyNameplates = true,
 }
 
 -- Combat log subevents that count as a received buff (Classic Era only)
